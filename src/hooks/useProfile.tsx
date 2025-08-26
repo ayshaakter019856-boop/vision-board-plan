@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useRoles } from './useRoles';
 
 export interface UserProfile {
   id: string;
@@ -15,6 +16,7 @@ export interface UserProfile {
 
 export const useProfile = () => {
   const { user } = useAuth();
+  const { isAdmin } = useRoles();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -71,7 +73,7 @@ export const useProfile = () => {
     fetchProfile();
   }, [user]);
 
-  const isFreePlan = profile?.current_plan === 'Free Plan';
+  const isFreePlan = profile?.current_plan === 'Free Plan' && !isAdmin;
   const isPlanExpired = profile?.plan_expires_at ? new Date(profile.plan_expires_at) < new Date() : false;
   
   const daysLeft = profile?.plan_expires_at 
