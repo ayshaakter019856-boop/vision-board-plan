@@ -17,8 +17,10 @@ const Index = () => {
             <span className="text-xl font-bold">MarketFlow</span>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm">Sign In</Button>
-            <Link to="/dashboard">
+            <Link to="/auth">
+              <Button variant="ghost" size="sm">Sign In</Button>
+            </Link>
+            <Link to="/auth">
               <Button variant="default" size="sm">Get Started</Button>
             </Link>
           </div>
@@ -41,7 +43,7 @@ const Index = () => {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/dashboard">
+                <Link to="/auth">
                   <Button size="lg" className="text-lg px-8">
                     Start Planning
                     <ArrowRight className="ml-2 w-5 h-5" />
@@ -138,7 +140,7 @@ const Index = () => {
             <p className="text-xl text-muted-foreground">
               Join thousands of marketers who plan better with visual diagrams
             </p>
-            <Link to="/dashboard">
+            <Link to="/auth">
               <Button size="lg" className="text-lg px-12">
                 Get Started Free
                 <ArrowRight className="ml-2 w-5 h-5" />

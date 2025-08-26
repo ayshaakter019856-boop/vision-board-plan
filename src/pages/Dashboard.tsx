@@ -1,43 +1,45 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, FolderOpen, Calendar } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Plus, Search, FolderOpen, Calendar, Trash2, User } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useDiagrams } from "@/hooks/useDiagrams";
+import { useState } from "react";
 
 const Dashboard = () => {
-  const mockProjects = [
-    {
-      id: 1,
-      title: "Q1 Campaign Strategy",
-      category: "Sales",
-      lastModified: "2 hours ago",
-      preview: "Target Audience → Ad Budget → Social Media..."
-    },
-    {
-      id: 2,
-      title: "Brand Awareness Flow",
-      category: "Branding",
-      lastModified: "1 day ago",
-      preview: "Brand Identity → Content Strategy → Channels..."
-    },
-    {
-      id: 3,
-      title: "Customer Retention Map",
-      category: "Retention",
-      lastModified: "3 days ago",
-      preview: "Onboarding → Engagement → Loyalty Program..."
-    }
-  ];
+  const { user, signOut } = useAuth();
+  const { diagrams, loading, deleteDiagram } = useDiagrams();
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      Sales: "bg-sales/10 text-sales border-sales/20",
-      Branding: "bg-branding/10 text-branding border-branding/20",
-      Retention: "bg-retention/10 text-retention border-retention/20",
-      Ads: "bg-ads/10 text-ads border-ads/20",
-      Analytics: "bg-analytics/10 text-analytics border-analytics/20"
-    };
-    return colors[category as keyof typeof colors] || "bg-muted text-muted-foreground";
+  const filteredDiagrams = diagrams.filter(diagram =>
+    diagram.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    if (diffInDays === 1) return '1 day ago';
+    return `${diffInDays} days ago`;
+  };
+
+  const getPreview = (nodes: any) => {
+    if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
+      return 'Empty diagram';
+    }
+    return nodes.slice(0, 3).map((node: any) => node.data?.label || 'Node').join(' → ') + 
+           (nodes.length > 3 ? '...' : '');
+  };
+
+  const handleDeleteDiagram = async (id: string, title: string) => {
+    await deleteDiagram(id);
   };
 
   return (
@@ -52,8 +54,11 @@ const Dashboard = () => {
             <span className="text-xl font-bold">MarketFlow</span>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm">Profile</Button>
-            <Button variant="outline" size="sm">Sign Out</Button>
+            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+              <User className="w-4 h-4" />
+              <span>{user?.email}</span>
+            </div>
+            <Button variant="outline" size="sm" onClick={signOut}>Sign Out</Button>
           </div>
         </div>
       </nav>
@@ -80,6 +85,8 @@ const Dashboard = () => {
             <Input 
               placeholder="Search marketing plans..." 
               className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <div className="flex gap-2">
@@ -105,33 +112,91 @@ const Dashboard = () => {
             </Card>
           </Link>
 
+          {/* Loading State */}
+          {loading && (
+            <div className="col-span-full flex justify-center py-12">
+              <div className="text-center space-y-4">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-muted-foreground">Loading diagrams...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loading && filteredDiagrams.length === 0 && (
+            <div className="col-span-full text-center py-12">
+              <div className="space-y-4">
+                <FolderOpen className="w-16 h-16 text-muted-foreground mx-auto" />
+                <div>
+                  <h3 className="text-lg font-semibold">No diagrams found</h3>
+                  <p className="text-muted-foreground">
+                    {searchTerm ? 'Try adjusting your search term' : 'Create your first marketing diagram to get started'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Existing Projects */}
-          {mockProjects.map((project) => (
-            <Link key={project.id} to="/builder">
-              <Card className="p-6 hover:shadow-medium transition-shadow cursor-pointer group">
+          {!loading && filteredDiagrams.map((diagram) => (
+            <Card key={diagram.id} className="p-6 hover:shadow-medium transition-shadow group relative">
+              <Link to={`/builder/${diagram.id}`} className="block">
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
-                    <div className="space-y-2">
+                    <div className="space-y-2 flex-1">
                       <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                        {project.title}
+                        {diagram.title}
                       </h3>
-                      <div className={`inline-flex px-2 py-1 rounded-md text-xs font-medium border ${getCategoryColor(project.category)}`}>
-                        {project.category}
-                      </div>
+                      {diagram.description && (
+                        <p className="text-sm text-muted-foreground">{diagram.description}</p>
+                      )}
                     </div>
                   </div>
                   
                   <p className="text-sm text-muted-foreground line-clamp-2">
-                    {project.preview}
+                    {getPreview(diagram.nodes)}
                   </p>
                   
-                  <div className="flex items-center text-xs text-muted-foreground pt-2 border-t border-border">
-                    <Calendar className="w-3 h-3 mr-1" />
-                    {project.lastModified}
+                  <div className="flex items-center justify-between pt-2 border-t border-border">
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      <Calendar className="w-3 h-3 mr-1" />
+                      {formatDate(diagram.updated_at)}
+                    </div>
                   </div>
                 </div>
-              </Card>
-            </Link>
+              </Link>
+              
+              {/* Delete Button */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Diagram</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{diagram.title}"? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDeleteDiagram(diagram.id, diagram.title)}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </Card>
           ))}
         </div>
 

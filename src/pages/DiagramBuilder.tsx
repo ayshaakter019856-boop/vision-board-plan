@@ -18,6 +18,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Save, 
   Download, 
@@ -30,9 +33,10 @@ import {
   BarChart3,
   ArrowLeft
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { MarketingNode } from "@/components/diagram/MarketingNode";
 import { Toolbar } from "@/components/diagram/Toolbar";
+import { useDiagrams } from "@/hooks/useDiagrams";
 import { toast } from "sonner";
 
 const nodeTypes = {
@@ -75,11 +79,36 @@ const initialEdges: Edge[] = [
 ];
 
 const DiagramBuilder = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { diagrams, saveDiagram } = useDiagrams();
+  
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedCategory, setSelectedCategory] = useState<string>('sales');
   const [newNodeLabel, setNewNodeLabel] = useState('');
+  const [diagramTitle, setDiagramTitle] = useState('');
+  const [diagramDescription, setDiagramDescription] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+
+  // Load existing diagram if ID is provided
+  useEffect(() => {
+    if (id && diagrams.length > 0) {
+      const diagram = diagrams.find(d => d.id === id);
+      if (diagram) {
+        setDiagramTitle(diagram.title);
+        setDiagramDescription(diagram.description || '');
+        if (diagram.nodes && Array.isArray(diagram.nodes)) {
+          setNodes(diagram.nodes);
+        }
+        if (diagram.edges && Array.isArray(diagram.edges)) {
+          setEdges(diagram.edges);
+        }
+      }
+    }
+  }, [id, diagrams, setNodes, setEdges]);
 
   // Handle keyboard delete
   useEffect(() => {
@@ -136,8 +165,40 @@ const DiagramBuilder = () => {
     toast.success(`Added "${newNodeLabel}" to diagram`);
   };
 
-  const handleSave = () => {
-    toast.success('Diagram saved successfully!');
+  const handleSave = async () => {
+    if (!diagramTitle.trim()) {
+      setIsSaveDialogOpen(true);
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const savedDiagram = await saveDiagram(diagramTitle, nodes, edges, diagramDescription, id);
+      if (savedDiagram && !id) {
+        // Navigate to the new diagram's edit page
+        navigate(`/builder/${savedDiagram.id}`, { replace: true });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveFromDialog = async () => {
+    if (!diagramTitle.trim()) {
+      toast.error('Please enter a title for your diagram');
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const savedDiagram = await saveDiagram(diagramTitle, nodes, edges, diagramDescription, id);
+      if (savedDiagram && !id) {
+        navigate(`/builder/${savedDiagram.id}`, { replace: true });
+      }
+      setIsSaveDialogOpen(false);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleExport = () => {
@@ -168,16 +229,56 @@ const DiagramBuilder = () => {
               </Button>
             </Link>
             <div className="flex items-center space-x-2">
-              <h1 className="text-xl font-bold">Marketing Flow Builder</h1>
-              <Badge variant="secondary">Draft</Badge>
+              <h1 className="text-xl font-bold">
+                {diagramTitle || 'Marketing Flow Builder'}
+              </h1>
+              <Badge variant="secondary">{id ? 'Editing' : 'Draft'}</Badge>
             </div>
           </div>
           
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={handleSave}>
-              <Save className="w-4 h-4 mr-2" />
-              Save
-            </Button>
+            <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" onClick={handleSave} disabled={isLoading}>
+                  <Save className="w-4 h-4 mr-2" />
+                  {isLoading ? 'Saving...' : 'Save'}
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Save Diagram</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                      id="title"
+                      value={diagramTitle}
+                      onChange={(e) => setDiagramTitle(e.target.value)}
+                      placeholder="Enter diagram title..."
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">Description (optional)</Label>
+                    <Textarea
+                      id="description"
+                      value={diagramDescription}
+                      onChange={(e) => setDiagramDescription(e.target.value)}
+                      placeholder="Enter diagram description..."
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={() => setIsSaveDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleSaveFromDialog} disabled={isLoading}>
+                      {isLoading ? 'Saving...' : 'Save'}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Button variant="outline" size="sm" onClick={handleExport}>
               <Download className="w-4 h-4 mr-2" />
               Export
