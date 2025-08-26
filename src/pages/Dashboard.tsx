@@ -906,13 +906,28 @@ const Dashboard = () => {
                         <label htmlFor="month_name" className="text-right">
                           Month
                         </label>
-                        <Input
-                          id="month_name"
+                        <Select
                           value={costFormData.month_name}
-                          onChange={(e) => setCostFormData({ ...costFormData, month_name: e.target.value })}
-                          className="col-span-3"
-                          placeholder="January"
-                        />
+                          onValueChange={(value) => setCostFormData({ ...costFormData, month_name: value })}
+                        >
+                          <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Select month" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background border border-border z-50">
+                            <SelectItem value="January">January</SelectItem>
+                            <SelectItem value="February">February</SelectItem>
+                            <SelectItem value="March">March</SelectItem>
+                            <SelectItem value="April">April</SelectItem>
+                            <SelectItem value="May">May</SelectItem>
+                            <SelectItem value="June">June</SelectItem>
+                            <SelectItem value="July">July</SelectItem>
+                            <SelectItem value="August">August</SelectItem>
+                            <SelectItem value="September">September</SelectItem>
+                            <SelectItem value="October">October</SelectItem>
+                            <SelectItem value="November">November</SelectItem>
+                            <SelectItem value="December">December</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="grid grid-cols-4 items-center gap-4">
                         <label htmlFor="date" className="text-right">
