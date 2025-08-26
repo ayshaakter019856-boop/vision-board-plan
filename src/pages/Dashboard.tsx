@@ -605,30 +605,25 @@ const Dashboard = () => {
             </div>
 
             {/* Category Filter */}
-            {categories.length > 0 && (
-              <div className="flex gap-2 flex-wrap">
-                <Button
-                  variant={selectedCategory === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedCategory('all')}
-                >
-                  All ({accounts.length})
-                </Button>
-                {categories.map((category) => {
-                  const count = accounts.filter(account => account.category === category).length;
-                  return (
-                    <Button
-                      key={category}
-                      variant={selectedCategory === category ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSelectedCategory(category)}
-                    >
-                      {category} ({count})
-                    </Button>
-                  );
-                })}
-              </div>
-            )}
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium">Filter by category:</span>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All ({accounts.length})</SelectItem>
+                  {categories.map((category) => {
+                    const count = accounts.filter(account => account.category === category).length;
+                    return (
+                      <SelectItem key={category} value={category}>
+                        {category} ({count})
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Accounts Table */}
             <div className="space-y-4">
