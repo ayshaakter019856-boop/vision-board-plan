@@ -1002,7 +1002,7 @@ const Dashboard = () => {
                       <TrendingDown className="h-4 w-4 text-destructive" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-destructive">${totalMonthlyCosting.toFixed(2)}</div>
+                      <div className="text-2xl font-bold text-destructive">৳{totalMonthlyCosting.toFixed(2)}</div>
                       <p className="text-xs text-muted-foreground">{currentMonth} {currentYear}</p>
                     </CardContent>
                   </Card>
@@ -1012,7 +1012,7 @@ const Dashboard = () => {
                       <TrendingUp className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-primary">${totalMonthlyEarning.toFixed(2)}</div>
+                      <div className="text-2xl font-bold text-primary">৳{totalMonthlyEarning.toFixed(2)}</div>
                       <p className="text-xs text-muted-foreground">{currentMonth} {currentYear}</p>
                     </CardContent>
                   </Card>
@@ -1023,7 +1023,7 @@ const Dashboard = () => {
                     </CardHeader>
                     <CardContent>
                       <div className={`text-2xl font-bold ${netEarning >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                        ${netEarning.toFixed(2)}
+                        ৳{netEarning.toFixed(2)}
                       </div>
                       <p className="text-xs text-muted-foreground">{currentMonth} {currentYear}</p>
                     </CardContent>
@@ -1068,7 +1068,7 @@ const Dashboard = () => {
                               </Badge>
                             </TableCell>
                             <TableCell className={cost.is_earning ? "text-primary font-medium" : "text-destructive font-medium"}>
-                              ${parseFloat(cost.costing_amount.toString()).toFixed(2)}
+                              ৳{parseFloat(cost.costing_amount.toString()).toFixed(2)}
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex gap-1 justify-end">
