@@ -8,8 +8,6 @@ export interface UserProfile {
   user_id: string;
   email: string | null;
   full_name: string | null;
-  current_plan: string;
-  plan_expires_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -73,20 +71,10 @@ export const useProfile = () => {
     fetchProfile();
   }, [user]);
 
-  const isFreePlan = profile?.current_plan === 'Free Plan' && !isAdmin;
-  const isPlanExpired = profile?.plan_expires_at ? new Date(profile.plan_expires_at) < new Date() : false;
-  
-  const daysLeft = profile?.plan_expires_at 
-    ? Math.max(0, Math.ceil((new Date(profile.plan_expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
-    : 0;
-
   return {
     profile,
     loading,
     updateProfile,
-    isFreePlan,
-    isPlanExpired,
-    daysLeft,
     refetch: fetchProfile
   };
 };

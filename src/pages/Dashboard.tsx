@@ -3,13 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy, DollarSign, TrendingUp, TrendingDown, Eye, EyeOff, ShoppingBag } from "lucide-react";
+import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDiagrams } from "@/hooks/useDiagrams";
 import { useNotes } from "@/hooks/useNotes";
 import { useAccounts } from "@/hooks/useAccounts";
-import { useCosts } from "@/hooks/useCosts";
 import { useProfile } from "@/hooks/useProfile";
 import { useRoles } from "@/hooks/useRoles";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -22,8 +21,7 @@ const Dashboard = () => {
   const { diagrams, loading, deleteDiagram } = useDiagrams();
   const { notes, loading: notesLoading, saveNote, deleteNote } = useNotes();
   const { accounts, loading: accountsLoading, createAccount, updateAccount, deleteAccount } = useAccounts();
-  const { costs, loading: costsLoading, saveCost, deleteCost } = useCosts();
-  const { profile, isFreePlan, isPlanExpired, daysLeft } = useProfile();
+  const { profile } = useProfile();
   const { isAdmin } = useRoles();
   const [searchTerm, setSearchTerm] = useState('');
   const [hiddenDiagrams, setHiddenDiagrams] = useState<Set<string>>(new Set());
@@ -49,20 +47,8 @@ const Dashboard = () => {
   const [showPassword, setShowPassword] = useState<{[key: string]: boolean}>({});
   const [selectedCategory, setSelectedCategory] = useState('all');
   
-  // Daily costing states
-  const [isAddCostDialogOpen, setIsAddCostDialogOpen] = useState(false);
-  const [editingCost, setEditingCost] = useState<any>(null);
-  const [selectedMonthFilter, setSelectedMonthFilter] = useState<string>(new Date().toLocaleString('default', { month: 'long' }));
-  const [costFormData, setCostFormData] = useState({
-    month_name: "",
-    date: "",
-    costing_reason: "",
-    costing_amount: "",
-    is_earning: false
-  });
-  
   // Section visibility state
-  const [activeSection, setActiveSection] = useState<'diagrams' | 'notes' | 'accounts' | 'costs' | null>(null);
+  const [activeSection, setActiveSection] = useState<'diagrams' | 'notes' | 'accounts' | null>(null);
 
   const filteredDiagrams = diagrams.filter(diagram =>
     diagram.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -86,7 +72,7 @@ const Dashboard = () => {
     if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
       return 'Empty diagram';
     }
-    return nodes.slice(0, 3).map((node: any) => node.data?.label || 'Node').join(' → ') + 
+    return nodes.slice(0, 3).map((node: any) => node.data?.label || 'Node').join(' → ') +
            (nodes.length > 3 ? '...' : '');
   };
 
@@ -187,85 +173,6 @@ const Dashboard = () => {
     }
   };
 
-  // Daily costing functions
-  const handleAddCost = () => {
-    setCostFormData({
-      month_name: "",
-      date: "",
-      costing_reason: "",
-      costing_amount: "",
-      is_earning: false
-    });
-    setEditingCost(null);
-    setIsAddCostDialogOpen(true);
-  };
-
-  const handleEditCost = (cost: any) => {
-    setCostFormData({
-      month_name: cost.month_name,
-      date: cost.date,
-      costing_reason: cost.costing_reason,
-      costing_amount: cost.costing_amount.toString(),
-      is_earning: cost.is_earning
-    });
-    setEditingCost(cost);
-    setIsAddCostDialogOpen(true);
-  };
-
-  const handleCostSubmit = async () => {
-    if (!costFormData.month_name || !costFormData.date || !costFormData.costing_reason || !costFormData.costing_amount) {
-      return;
-    }
-
-    await saveCost(
-      costFormData.month_name,
-      costFormData.date,
-      costFormData.costing_reason,
-      parseFloat(costFormData.costing_amount),
-      costFormData.is_earning,
-      editingCost?.id
-    );
-
-    setIsAddCostDialogOpen(false);
-    setCostFormData({
-      month_name: "",
-      date: "",
-      costing_reason: "",
-      costing_amount: "",
-      is_earning: false
-    });
-    setEditingCost(null);
-  };
-
-  const handleDeleteCost = async (costId: string) => {
-    await deleteCost(costId);
-  };
-
-  // Calculate cost totals
-  const currentMonth = new Date().toLocaleString('default', { month: 'long' });
-  const currentYear = new Date().getFullYear();
-  
-  // Get month number from selected month name for filtering
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-                     'July', 'August', 'September', 'October', 'November', 'December'];
-  const selectedMonthIndex = monthNames.indexOf(selectedMonthFilter);
-  
-  const monthlyData = (costs || []).filter(cost => {
-    const costDate = new Date(cost.date);
-    return costDate.getMonth() === selectedMonthIndex && 
-           costDate.getFullYear() === currentYear;
-  });
-
-  const totalMonthlyCosting = monthlyData
-    .filter(cost => !cost.is_earning)
-    .reduce((sum, cost) => sum + parseFloat(cost.costing_amount.toString()), 0);
-    
-  const totalMonthlyEarning = monthlyData
-    .filter(cost => cost.is_earning)
-    .reduce((sum, cost) => sum + parseFloat(cost.costing_amount.toString()), 0);
-    
-  const netEarning = totalMonthlyEarning - totalMonthlyCosting;
-
   // Get unique categories
   const categories = Array.from(new Set(accounts.map(account => account.category))).filter(Boolean);
   
@@ -286,32 +193,10 @@ const Dashboard = () => {
             <span className="text-xl font-bold">MarketFlow</span>
           </div>
           <div className="flex items-center space-x-4">
-            {/* Current Plan Display */}
-            <div className="flex items-center space-x-2 text-sm bg-muted/50 px-3 py-1.5 rounded-lg">
-              <Badge variant={isAdmin ? "default" : isFreePlan ? "secondary" : "default"} className="text-xs">
-                {profile?.current_plan || 'Free Plan'}
+            {isAdmin && (
+              <Badge variant="default" className="text-xs">
+                Admin Access
               </Badge>
-              {isAdmin && (
-                <span className="text-primary font-medium">Admin Access</span>
-              )}
-              {isFreePlan && !isPlanExpired && !isAdmin && (
-                <span className="text-muted-foreground">
-                  {daysLeft} days left
-                </span>
-              )}
-              {isPlanExpired && !isAdmin && (
-                <span className="text-destructive text-xs">Expired</span>
-              )}
-            </div>
-            
-            {/* Only show upgrade button for non-admin users */}
-            {!isAdmin && (
-              <Link to="/pricing">
-                <Button variant="outline" size="sm">
-                  <ShoppingBag className="w-4 h-4 mr-2" />
-                  {isFreePlan || isPlanExpired ? 'Upgrade Plan' : 'Manage Plan'}
-                </Button>
-              </Link>
             )}
             
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -333,7 +218,7 @@ const Dashboard = () => {
         </div>
 
         {/* Section Navigation */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
           <Card 
             className={`p-6 cursor-pointer transition-all hover:shadow-medium group ${
               activeSection === 'diagrams' ? 'ring-2 ring-primary bg-primary/5' : ''
@@ -381,23 +266,6 @@ const Dashboard = () => {
               <div>
                 <h3 className="font-semibold text-lg">Digital Accounts</h3>
                 <p className="text-sm text-muted-foreground">{accounts.length} accounts</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card 
-            className={`p-6 cursor-pointer transition-all hover:shadow-medium group ${
-              activeSection === 'costs' ? 'ring-2 ring-primary bg-primary/5' : ''
-            }`}
-            onClick={() => setActiveSection(activeSection === 'costs' ? null : 'costs')}
-          >
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
-                <DollarSign className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">Daily Costing</h3>
-                <p className="text-sm text-muted-foreground">{costs.length} entries</p>
               </div>
             </div>
           </Card>
@@ -453,74 +321,76 @@ const Dashboard = () => {
               {loading && (
                 <div className="col-span-full flex justify-center py-12">
                   <div className="text-center space-y-4">
-                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p className="text-muted-foreground">Loading diagrams...</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-muted-foreground">Loading your marketing plans...</p>
                   </div>
                 </div>
               )}
 
-              {/* Empty State */}
-              {!loading && filteredDiagrams.length === 0 && (
-                <div className="col-span-full text-center py-12">
-                  <div className="space-y-4">
-                    <FolderOpen className="w-16 h-16 text-muted-foreground mx-auto" />
-                    <div>
-                      <h3 className="text-lg font-semibold">No diagrams found</h3>
-                      <p className="text-muted-foreground">
-                        {searchTerm ? 'Try adjusting your search term' : 'Create your first marketing diagram to get started'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Existing Projects */}
+              {/* Existing Diagrams */}
               {!loading && filteredDiagrams.map((diagram) => (
-                <Card key={diagram.id} className="p-6 hover:shadow-medium transition-shadow group relative">
-                  {/* Hide Button - positioned absolute with z-index */}
-                  <div className="absolute top-2 right-2 z-10">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        deleteDiagram(diagram.id);
-                      }}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  {/* Clickable content area */}
-                  <Link to={`/builder/${diagram.id}`} className="block">
-                    <div className="space-y-4">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-2 flex-1 pr-10">
-                          <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                            {diagram.title}
-                          </h3>
-                          {diagram.description && (
-                            <p className="text-sm text-muted-foreground">{diagram.description}</p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {getPreview(diagram.nodes)}
-                      </p>
-                      
-                      <div className="flex items-center justify-between pt-2 border-t border-border">
-                        <div className="flex items-center text-xs text-muted-foreground">
-                          <Calendar className="w-3 h-3 mr-1" />
+                <Card key={diagram.id} className="p-6 hover:shadow-medium transition-all group">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
+                          {diagram.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {getPreview(diagram.nodes)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
                           {formatDate(diagram.updated_at)}
-                        </div>
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleHideDiagram(diagram.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                  </Link>
+                    
+                    <div className="flex gap-2">
+                      <Link to={`/builder/${diagram.id}`} className="flex-1">
+                        <Button variant="outline" size="sm" className="w-full">
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          deleteDiagram(diagram.id);
+                        }}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
                 </Card>
               ))}
+
+              {/* Empty State */}
+              {!loading && filteredDiagrams.length === 0 && searchTerm && (
+                <div className="col-span-full text-center py-12">
+                  <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <Search className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-semibold text-lg mb-2">No plans found</h3>
+                  <p className="text-muted-foreground">Try searching with different keywords</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -530,363 +400,256 @@ const Dashboard = () => {
           <div className="space-y-6">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold mb-2">My Notes</h2>
-                <p className="text-muted-foreground">Keep track of your marketing plans and ideas</p>
+                <h2 className="text-2xl font-bold mb-2">Notes</h2>
+                <p className="text-muted-foreground">Keep track of your thoughts and ideas</p>
               </div>
-              <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="lg" onClick={handleNewNote}>
-                    <Plus className="w-5 h-5 mr-2" />
-                    New Note
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingNote ? 'Edit Note' : 'Create New Note'}</DialogTitle>
-                    <DialogDescription>
-                      {editingNote ? 'Update your note' : 'Add a new note to keep track of your marketing plans'}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <label htmlFor="note-title" className="text-sm font-medium">Title</label>
-                      <Input
-                        id="note-title"
-                        value={noteTitle}
-                        onChange={(e) => setNoteTitle(e.target.value)}
-                        placeholder="Enter note title..."
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="note-content" className="text-sm font-medium">Content</label>
-                      <Textarea
-                        id="note-content"
-                        value={noteContent}
-                        onChange={(e) => setNoteContent(e.target.value)}
-                        placeholder="Write your note content here..."
-                        rows={6}
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsNoteDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleSaveNote}>
-                      {editingNote ? 'Update Note' : 'Save Note'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <Button onClick={handleNewNote} size="lg">
+                <Plus className="w-5 h-5 mr-2" />
+                New Note
+              </Button>
             </div>
 
             {/* Notes Grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Loading State */}
               {notesLoading && (
                 <div className="col-span-full flex justify-center py-12">
                   <div className="text-center space-y-4">
-                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p className="text-muted-foreground">Loading notes...</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-muted-foreground">Loading your notes...</p>
                   </div>
                 </div>
               )}
 
-              {/* Empty State */}
-              {!notesLoading && notes.length === 0 && (
-                <div className="col-span-full text-center py-12">
-                  <div className="space-y-4">
-                    <StickyNote className="w-16 h-16 text-muted-foreground mx-auto" />
-                    <div>
-                      <h3 className="text-lg font-semibold">No notes yet</h3>
-                      <p className="text-muted-foreground">Create your first note to start organizing your ideas</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Notes */}
               {!notesLoading && notes.map((note) => (
-                <Card key={note.id} className="p-6 hover:shadow-medium transition-shadow group relative">
-                  {/* Edit Button */}
-                  <div className="absolute top-2 right-2 z-10 flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-primary hover:text-primary-foreground"
-                      onClick={() => handleEditNote(note)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                      onClick={() => deleteNote(note.id)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-
+                <Card key={note.id} className="p-6 hover:shadow-medium transition-all group">
                   <div className="space-y-4">
-                    <div className="pr-10">
-                      <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                        {note.title}
-                      </h3>
-                      {note.content && (
-                        <p className="text-sm text-muted-foreground mt-2 line-clamp-3">
-                          {note.content}
-                        </p>
-                      )}
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">{note.title}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-3">
+                        {note.content || 'No content'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {formatDate(note.updated_at)}
+                      </p>
                     </div>
                     
-                    <div className="flex items-center justify-between pt-2 border-t border-border">
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        {formatDate(note.updated_at)}
-                      </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditNote(note)}
+                        className="flex-1"
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteNote(note.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        Delete
+                      </Button>
                     </div>
                   </div>
                 </Card>
               ))}
+
+              {!notesLoading && notes.length === 0 && (
+                <div className="col-span-full text-center py-12">
+                  <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <StickyNote className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-semibold text-lg mb-2">No notes yet</h3>
+                  <p className="text-muted-foreground mb-4">Create your first note to get started</p>
+                  <Button onClick={handleNewNote}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Note
+                  </Button>
+                </div>
+              )}
             </div>
+
+            {/* Note Dialog */}
+            <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>{editingNote ? 'Edit Note' : 'Create New Note'}</DialogTitle>
+                  <DialogDescription>
+                    {editingNote ? 'Update your note content' : 'Add a new note to your collection'}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Title</label>
+                    <Input
+                      value={noteTitle}
+                      onChange={(e) => setNoteTitle(e.target.value)}
+                      placeholder="Enter note title..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Content</label>
+                    <Textarea
+                      value={noteContent}
+                      onChange={(e) => setNoteContent(e.target.value)}
+                      placeholder="Enter note content..."
+                      rows={4}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsNoteDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveNote}>
+                    {editingNote ? 'Update' : 'Create'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 
-        {/* Digital Accounts Section */}
+        {/* Accounts Section */}
         {activeSection === 'accounts' && (
           <div className="space-y-6">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold mb-2">Digital Accounts</h2>
-                <p className="text-muted-foreground">Securely manage your account credentials</p>
-                <div className="mt-2 p-3 bg-muted rounded-lg text-sm text-muted-foreground">
-                  <div className="flex items-start gap-2">
-                    <div className="w-1 h-1 bg-primary rounded-full mt-2 shrink-0"></div>
-                    <span>All sensitive data is encrypted using AES-256 encryption before storage. Your encryption key is unique to your session and is cleared when you log out.</span>
-                  </div>
-                </div>
+                <p className="text-muted-foreground">Manage your digital service accounts and credentials</p>
               </div>
-              <Dialog open={isAccountDialogOpen} onOpenChange={setIsAccountDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="lg" onClick={handleNewAccount}>
-                    <Plus className="w-5 h-5 mr-2" />
-                    New Account
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>{editingAccount ? 'Edit Account' : 'Create New Account'}</DialogTitle>
-                    <DialogDescription>
-                      {editingAccount ? 'Update account information' : 'Add a new digital account with secure encryption'}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <label htmlFor="product-name" className="text-sm font-medium">Product/Service Name *</label>
-                      <Input
-                        id="product-name"
-                        value={accountForm.product_name}
-                        onChange={(e) => setAccountForm({...accountForm, product_name: e.target.value})}
-                        placeholder="e.g. Netflix, Spotify, Gmail"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="category" className="text-sm font-medium">Category *</label>
-                      <Input
-                        id="category"
-                        value={accountForm.category}
-                        onChange={(e) => setAccountForm({...accountForm, category: e.target.value})}
-                        placeholder="e.g. Streaming, Music, Email"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="email" className="text-sm font-medium">Email</label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={accountForm.email}
-                        onChange={(e) => setAccountForm({...accountForm, email: e.target.value})}
-                        placeholder="account@example.com"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="password" className="text-sm font-medium">Password</label>
-                      <Input
-                        id="password"
-                        type="password"
-                        value={accountForm.password}
-                        onChange={(e) => setAccountForm({...accountForm, password: e.target.value})}
-                        placeholder="••••••••"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="customer-name" className="text-sm font-medium">Customer Name</label>
-                      <Input
-                        id="customer-name"
-                        value={accountForm.customer_name}
-                        onChange={(e) => setAccountForm({...accountForm, customer_name: e.target.value})}
-                        placeholder="Account holder name"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="order-date" className="text-sm font-medium">Order/Creation Date</label>
-                      <Input
-                        id="order-date"
-                        type="date"
-                        value={accountForm.order_date}
-                        onChange={(e) => setAccountForm({...accountForm, order_date: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="note" className="text-sm font-medium">Notes</label>
-                      <Textarea
-                        id="note"
-                        value={accountForm.note}
-                        onChange={(e) => setAccountForm({...accountForm, note: e.target.value})}
-                        placeholder="Additional notes about this account..."
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsAccountDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleSaveAccount}>
-                      {editingAccount ? 'Update Account' : 'Save Account'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <Button onClick={handleNewAccount} size="lg">
+                <Plus className="w-5 h-5 mr-2" />
+                New Account
+              </Button>
             </div>
 
             {/* Category Filter */}
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium">Filter by category:</span>
+            <div className="flex gap-4 items-center">
+              <label className="text-sm font-medium">Filter by category:</label>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All ({accounts.length})</SelectItem>
-                  {categories.map((category) => {
-                    const count = accounts.filter(account => account.category === category).length;
-                    return (
-                      <SelectItem key={category} value={category}>
-                        {category} ({count})
-                      </SelectItem>
-                    );
-                  })}
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             {/* Accounts Table */}
-            <div className="space-y-4">
-              {/* Loading State */}
-              {accountsLoading && (
-                <div className="flex justify-center py-12">
-                  <div className="text-center space-y-4">
-                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p className="text-muted-foreground">Loading accounts...</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Empty State */}
-              {!accountsLoading && filteredAccounts.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="space-y-4">
-                    <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto" />
-                    <div>
-                      <h3 className="text-lg font-semibold">No accounts yet</h3>
-                      <p className="text-muted-foreground">Create your first digital account to start organizing your credentials</p>
+            <Card>
+              <CardHeader>
+                <CardTitle>Account List</CardTitle>
+                <CardDescription>
+                  Your saved digital accounts and login credentials
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {accountsLoading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="text-center space-y-4">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                      <p className="text-muted-foreground">Loading accounts...</p>
                     </div>
                   </div>
-                </div>
-              )}
-
-              {/* Accounts Table */}
-              {!accountsLoading && filteredAccounts.length > 0 && (
-                <Card>
+                ) : filteredAccounts.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center mx-auto mb-4">
+                      <Shield className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-2">No accounts found</h3>
+                    <p className="text-muted-foreground mb-4">
+                      {selectedCategory === 'all' 
+                        ? 'Create your first account to get started'
+                        : `No accounts in the "${selectedCategory}" category`
+                      }
+                    </p>
+                    <Button onClick={handleNewAccount}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Account
+                    </Button>
+                  </div>
+                ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Order Date</TableHead>
-                        <TableHead>Product Name</TableHead>
+                        <TableHead>Product/Service</TableHead>
+                        <TableHead>Category</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Password</TableHead>
-                        <TableHead>Buyer/Seller Name</TableHead>
-                        <TableHead>Note</TableHead>
-                        <TableHead className="w-20">Actions</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Order Date</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredAccounts.map((account) => (
-                        <TableRow key={account.id} className="hover:bg-muted/50">
-                          <TableCell className="text-sm">
-                            {account.order_date ? new Date(account.order_date).toLocaleDateString() : formatDate(account.created_at)}
+                        <TableRow key={account.id}>
+                          <TableCell className="font-medium">
+                            {account.product_name}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{account.product_name}</span>
-                              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                                {account.category}
+                            <Badge variant="outline">{account.category}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-mono text-sm">{account.email || '-'}</span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-mono text-sm">
+                                {account.password ? (
+                                  showPassword[account.id] 
+                                    ? account.password 
+                                    : '••••••••'
+                                ) : '-'}
                               </span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {account.email || '-'}
-                          </TableCell>
-                          <TableCell>
-                            {account.password ? (
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-sm">
-                                  {showPassword[account.id] ? account.password : '••••••••'}
-                                </span>
+                              {account.password && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-6 w-6 p-0"
                                   onClick={() => togglePasswordVisibility(account.id)}
                                 >
                                   {showPassword[account.id] ? (
-                                    <EyeOff className="w-3 h-3" />
+                                    <EyeOff className="w-4 h-4" />
                                   ) : (
-                                    <Eye className="w-3 h-3" />
+                                    <Eye className="w-4 h-4" />
                                   )}
                                 </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>{account.customer_name || '-'}</TableCell>
+                          <TableCell>
+                            {account.order_date ? (
+                              <div className="flex items-center space-x-2">
+                                <Calendar className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-sm">
+                                  {new Date(account.order_date).toLocaleDateString()}
+                                </span>
                               </div>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {account.customer_name || '-'}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground max-w-xs">
-                            {account.note ? (
-                              <span className="line-clamp-2">{account.note}</span>
-                            ) : (
-                              '-'
-                            )}
+                            ) : '-'}
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-1">
+                            <div className="flex items-center space-x-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 hover:bg-secondary hover:text-secondary-foreground"
                                 onClick={() => copyAccountDetails(account)}
-                                title="Copy email, password and note"
+                                title="Copy account details"
                               >
                                 <Copy className="w-4 h-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 hover:bg-primary hover:text-primary-foreground"
                                 onClick={() => handleEditAccount(account)}
                               >
                                 <Edit className="w-4 h-4" />
@@ -894,8 +657,8 @@ const Dashboard = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
                                 onClick={() => deleteAccount(account.id)}
+                                className="text-destructive hover:text-destructive"
                               >
                                 <X className="w-4 h-4" />
                               </Button>
@@ -905,266 +668,90 @@ const Dashboard = () => {
                       ))}
                     </TableBody>
                   </Table>
-                </Card>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Daily Costing Section */}
-        {activeSection === 'costs' && (
-          <div className="mb-8">
-            <Card className="border-border/40 bg-card/30 backdrop-blur">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-primary" />
-                    Daily Costing
-                  </CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Track your daily expenses and earnings
-                  </CardDescription>
-                </div>
-                <Dialog open={isAddCostDialogOpen} onOpenChange={setIsAddCostDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={handleAddCost} className="bg-primary hover:bg-primary/90">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Cost
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>{editingCost ? "Edit Cost" : "Add New Cost"}</DialogTitle>
-                      <DialogDescription>
-                        {editingCost ? "Update the cost details." : "Add a new daily cost or earning entry."}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <label htmlFor="month_name" className="text-right">
-                          Month
-                        </label>
-                        <Select
-                          value={costFormData.month_name}
-                          onValueChange={(value) => setCostFormData({ ...costFormData, month_name: value })}
-                        >
-                          <SelectTrigger className="col-span-3">
-                            <SelectValue placeholder="Select month" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-background border border-border z-50">
-                            <SelectItem value="January">January</SelectItem>
-                            <SelectItem value="February">February</SelectItem>
-                            <SelectItem value="March">March</SelectItem>
-                            <SelectItem value="April">April</SelectItem>
-                            <SelectItem value="May">May</SelectItem>
-                            <SelectItem value="June">June</SelectItem>
-                            <SelectItem value="July">July</SelectItem>
-                            <SelectItem value="August">August</SelectItem>
-                            <SelectItem value="September">September</SelectItem>
-                            <SelectItem value="October">October</SelectItem>
-                            <SelectItem value="November">November</SelectItem>
-                            <SelectItem value="December">December</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <label htmlFor="date" className="text-right">
-                          Date
-                        </label>
-                        <Input
-                          id="date"
-                          type="date"
-                          value={costFormData.date}
-                          onChange={(e) => setCostFormData({ ...costFormData, date: e.target.value })}
-                          className="col-span-3"
-                        />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <label htmlFor="costing_reason" className="text-right">
-                          Reason
-                        </label>
-                        <Input
-                          id="costing_reason"
-                          value={costFormData.costing_reason}
-                          onChange={(e) => setCostFormData({ ...costFormData, costing_reason: e.target.value })}
-                          className="col-span-3"
-                          placeholder="Grocery shopping"
-                        />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <label htmlFor="costing_amount" className="text-right">
-                          Amount
-                        </label>
-                        <Input
-                          id="costing_amount"
-                          type="number"
-                          step="0.01"
-                          value={costFormData.costing_amount}
-                          onChange={(e) => setCostFormData({ ...costFormData, costing_amount: e.target.value })}
-                          className="col-span-3"
-                          placeholder="100.00"
-                        />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <label htmlFor="is_earning" className="text-right">
-                          Type
-                        </label>
-                        <Select
-                          value={costFormData.is_earning ? "earning" : "cost"}
-                          onValueChange={(value) => setCostFormData({ ...costFormData, is_earning: value === "earning" })}
-                        >
-                          <SelectTrigger className="col-span-3">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="cost">Cost</SelectItem>
-                            <SelectItem value="earning">Earning</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleCostSubmit} className="bg-primary hover:bg-primary/90">
-                        {editingCost ? "Update Cost" : "Add Cost"}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </CardHeader>
-              <CardContent>
-                {/* Monthly Filter */}
-                <div className="mb-6">
-                  <div className="flex items-center gap-4">
-                    <label className="text-sm font-medium">Filter by Month:</label>
-                    <Select
-                      value={selectedMonthFilter}
-                      onValueChange={setSelectedMonthFilter}
-                    >
-                      <SelectTrigger className="w-48">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border border-border z-50">
-                        <SelectItem value="January">January</SelectItem>
-                        <SelectItem value="February">February</SelectItem>
-                        <SelectItem value="March">March</SelectItem>
-                        <SelectItem value="April">April</SelectItem>
-                        <SelectItem value="May">May</SelectItem>
-                        <SelectItem value="June">June</SelectItem>
-                        <SelectItem value="July">July</SelectItem>
-                        <SelectItem value="August">August</SelectItem>
-                        <SelectItem value="September">September</SelectItem>
-                        <SelectItem value="October">October</SelectItem>
-                        <SelectItem value="November">November</SelectItem>
-                        <SelectItem value="December">December</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <Card className="border-border/40">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total Monthly Costing</CardTitle>
-                      <TrendingDown className="h-4 w-4 text-destructive" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-destructive">৳{totalMonthlyCosting.toFixed(2)}</div>
-                      <p className="text-xs text-muted-foreground">{selectedMonthFilter} {currentYear}</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="border-border/40">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total Monthly Earning</CardTitle>
-                      <TrendingUp className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-primary">৳{totalMonthlyEarning.toFixed(2)}</div>
-                      <p className="text-xs text-muted-foreground">{selectedMonthFilter} {currentYear}</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="border-border/40">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Net Earning</CardTitle>
-                      <DollarSign className="h-4 w-4 text-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className={`text-2xl font-bold ${netEarning >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                        ৳{netEarning.toFixed(2)}
-                      </div>
-                      <p className="text-xs text-muted-foreground">{selectedMonthFilter} {currentYear}</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Costs Table */}
-                <div className="border border-border/40 rounded-md bg-card/50">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Month Name</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Costing Reason</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Costing Amount</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {costsLoading ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                            Loading costs...
-                          </TableCell>
-                        </TableRow>
-                      ) : monthlyData.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                            No costs found for {selectedMonthFilter} {currentYear}.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        monthlyData.map((cost) => (
-                          <TableRow key={cost.id}>
-                            <TableCell className="font-medium">{cost.month_name}</TableCell>
-                            <TableCell>{new Date(cost.date).toLocaleDateString()}</TableCell>
-                            <TableCell>{cost.costing_reason}</TableCell>
-                            <TableCell>
-                              <Badge variant={cost.is_earning ? "default" : "destructive"}>
-                                {cost.is_earning ? "Earning" : "Cost"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className={cost.is_earning ? "text-primary font-medium" : "text-destructive font-medium"}>
-                              ৳{parseFloat(cost.costing_amount.toString()).toFixed(2)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex gap-1 justify-end">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 hover:bg-primary hover:text-primary-foreground"
-                                  onClick={() => handleEditCost(cost)}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                                  onClick={() => handleDeleteCost(cost.id)}
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                )}
               </CardContent>
             </Card>
+
+            {/* Account Dialog */}
+            <Dialog open={isAccountDialogOpen} onOpenChange={setIsAccountDialogOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>{editingAccount ? 'Edit Account' : 'Add New Account'}</DialogTitle>
+                  <DialogDescription>
+                    {editingAccount ? 'Update account information' : 'Add a new digital service account'}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Product/Service Name *</label>
+                    <Input
+                      value={accountForm.product_name}
+                      onChange={(e) => setAccountForm(prev => ({ ...prev, product_name: e.target.value }))}
+                      placeholder="e.g., Netflix, Spotify, Adobe..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Category *</label>
+                    <Input
+                      value={accountForm.category}
+                      onChange={(e) => setAccountForm(prev => ({ ...prev, category: e.target.value }))}
+                      placeholder="e.g., Streaming, Design, Productivity..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Email</label>
+                    <Input
+                      type="email"
+                      value={accountForm.email}
+                      onChange={(e) => setAccountForm(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="account@email.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Password</label>
+                    <Input
+                      type="password"
+                      value={accountForm.password}
+                      onChange={(e) => setAccountForm(prev => ({ ...prev, password: e.target.value }))}
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Customer Name</label>
+                    <Input
+                      value={accountForm.customer_name}
+                      onChange={(e) => setAccountForm(prev => ({ ...prev, customer_name: e.target.value }))}
+                      placeholder="Account holder name"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Order Date</label>
+                    <Input
+                      type="date"
+                      value={accountForm.order_date}
+                      onChange={(e) => setAccountForm(prev => ({ ...prev, order_date: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Note</label>
+                    <Textarea
+                      value={accountForm.note}
+                      onChange={(e) => setAccountForm(prev => ({ ...prev, note: e.target.value }))}
+                      placeholder="Additional notes..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAccountDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveAccount}>
+                    {editingAccount ? 'Update' : 'Create'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
       </div>
