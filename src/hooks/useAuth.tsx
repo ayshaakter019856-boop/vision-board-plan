@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { encryptionService } from '@/lib/encryption';
 
 interface AuthContextType {
   user: User | null;
@@ -63,6 +64,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    // Clear encryption key on logout for security
+    encryptionService.clearKey();
     await supabase.auth.signOut();
   };
 

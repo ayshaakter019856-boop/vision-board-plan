@@ -587,6 +587,24 @@ const Dashboard = () => {
               </div>
             )}
 
+            {/* Security Notice */}
+            {!accountsLoading && filteredAccounts.length > 0 && (
+              <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div className="flex items-start space-x-2">
+                  <div className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5">
+                    🔒
+                  </div>
+                  <div className="text-sm">
+                    <p className="font-medium text-amber-800 dark:text-amber-200">Security Protected</p>
+                    <p className="text-amber-700 dark:text-amber-300">
+                      Your passwords and emails are encrypted using AES-256 encryption before being stored. 
+                      Only you can decrypt and view this sensitive information.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Accounts Table */}
             {!accountsLoading && filteredAccounts.length > 0 && (
               <Card className="overflow-hidden">
