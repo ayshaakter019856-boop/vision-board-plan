@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Search, FolderOpen, Calendar, Trash2, User } from "lucide-react";
+import { Plus, Search, FolderOpen, Calendar, X, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDiagrams } from "@/hooks/useDiagrams";
@@ -12,9 +12,11 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { diagrams, loading, deleteDiagram } = useDiagrams();
   const [searchTerm, setSearchTerm] = useState('');
+  const [hiddenDiagrams, setHiddenDiagrams] = useState<Set<string>>(new Set());
 
   const filteredDiagrams = diagrams.filter(diagram =>
-    diagram.title.toLowerCase().includes(searchTerm.toLowerCase())
+    diagram.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    !hiddenDiagrams.has(diagram.id)
   );
 
   const formatDate = (dateString: string) => {
@@ -38,9 +40,8 @@ const Dashboard = () => {
            (nodes.length > 3 ? '...' : '');
   };
 
-  const handleDeleteDiagram = async (id: string, title: string) => {
-    console.log('Delete diagram called:', id, title);
-    await deleteDiagram(id);
+  const handleHideDiagram = (id: string) => {
+    setHiddenDiagrams(prev => new Set([...prev, id]));
   };
 
   return (
@@ -141,46 +142,20 @@ const Dashboard = () => {
           {/* Existing Projects */}
           {!loading && filteredDiagrams.map((diagram) => (
             <Card key={diagram.id} className="p-6 hover:shadow-medium transition-shadow group relative">
-              {/* Delete Button - positioned absolute with z-index */}
+              {/* Hide Button - positioned absolute with z-index */}
               <div className="absolute top-2 right-2 z-10">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('Delete button clicked');
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Diagram</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete "{diagram.title}"? This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('Confirming delete for:', diagram.id);
-                        handleDeleteDiagram(diagram.id, diagram.title);
-                      }}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleHideDiagram(diagram.id);
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
 
               {/* Clickable content area */}
