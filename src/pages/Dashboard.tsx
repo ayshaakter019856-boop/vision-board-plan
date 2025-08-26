@@ -240,7 +240,7 @@ const Dashboard = () => {
   const currentMonth = new Date().toLocaleString('default', { month: 'long' });
   const currentYear = new Date().getFullYear();
   
-  const monthlyData = costs.filter(cost => {
+  const monthlyData = (costs || []).filter(cost => {
     const costDate = new Date(cost.date);
     return costDate.getMonth() === new Date().getMonth() && 
            costDate.getFullYear() === currentYear;
@@ -1035,14 +1035,14 @@ const Dashboard = () => {
                             Loading costs...
                           </TableCell>
                         </TableRow>
-                      ) : costs.length === 0 ? (
+                      ) : (costs || []).length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                             No costs found. Add your first cost entry.
                           </TableCell>
                         </TableRow>
                       ) : (
-                        costs.map((cost) => (
+                        (costs || []).map((cost) => (
                           <TableRow key={cost.id}>
                             <TableCell className="font-medium">{cost.month_name}</TableCell>
                             <TableCell>{new Date(cost.date).toLocaleDateString()}</TableCell>
