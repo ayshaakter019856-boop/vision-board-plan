@@ -52,6 +52,31 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				sales: {
+					DEFAULT: 'hsl(var(--sales))',
+					foreground: 'hsl(var(--sales-foreground))',
+					muted: 'hsl(var(--sales-muted))'
+				},
+				branding: {
+					DEFAULT: 'hsl(var(--branding))',
+					foreground: 'hsl(var(--branding-foreground))',
+					muted: 'hsl(var(--branding-muted))'
+				},
+				ads: {
+					DEFAULT: 'hsl(var(--ads))',
+					foreground: 'hsl(var(--ads-foreground))',
+					muted: 'hsl(var(--ads-muted))'
+				},
+				retention: {
+					DEFAULT: 'hsl(var(--retention))',
+					foreground: 'hsl(var(--retention-foreground))',
+					muted: 'hsl(var(--retention-muted))'
+				},
+				analytics: {
+					DEFAULT: 'hsl(var(--analytics))',
+					foreground: 'hsl(var(--analytics-foreground))',
+					muted: 'hsl(var(--analytics-muted))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -67,6 +92,19 @@ export default {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			boxShadow: {
+				soft: 'var(--shadow-soft)',
+				medium: 'var(--shadow-medium)',
+				large: 'var(--shadow-large)'
+			},
+			backgroundImage: {
+				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-secondary': 'var(--gradient-secondary)',
+				'gradient-hero': 'var(--gradient-hero)'
+			},
+			transitionTimingFunction: {
+				smooth: 'var(--transition-smooth)'
 			},
 			keyframes: {
 				'accordion-down': {
