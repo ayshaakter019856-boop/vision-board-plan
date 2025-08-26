@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy, Eye, EyeOff } from "lucide-react";
+import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy, DollarSign, TrendingUp, TrendingDown, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDiagrams } from "@/hooks/useDiagrams";
 import { useNotes } from "@/hooks/useNotes";
 import { useAccounts } from "@/hooks/useAccounts";
+import { useCosts } from "@/hooks/useCosts";
 import { useProfile } from "@/hooks/useProfile";
 import { useRoles } from "@/hooks/useRoles";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -21,6 +22,7 @@ const Dashboard = () => {
   const { diagrams, loading, deleteDiagram } = useDiagrams();
   const { notes, loading: notesLoading, saveNote, deleteNote } = useNotes();
   const { accounts, loading: accountsLoading, createAccount, updateAccount, deleteAccount } = useAccounts();
+  const { costs, loading: costsLoading, saveCost, deleteCost } = useCosts();
   const { profile } = useProfile();
   const { isAdmin } = useRoles();
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,8 +49,20 @@ const Dashboard = () => {
   const [showPassword, setShowPassword] = useState<{[key: string]: boolean}>({});
   const [selectedCategory, setSelectedCategory] = useState('all');
   
+  // Daily costing states
+  const [isAddCostDialogOpen, setIsAddCostDialogOpen] = useState(false);
+  const [editingCost, setEditingCost] = useState<any>(null);
+  const [selectedMonthFilter, setSelectedMonthFilter] = useState<string>(new Date().toLocaleString('default', { month: 'long' }));
+  const [costFormData, setCostFormData] = useState({
+    month_name: "",
+    date: "",
+    costing_reason: "",
+    costing_amount: "",
+    is_earning: false
+  });
+  
   // Section visibility state
-  const [activeSection, setActiveSection] = useState<'diagrams' | 'notes' | 'accounts' | null>(null);
+  const [activeSection, setActiveSection] = useState<'diagrams' | 'notes' | 'accounts' | 'costs' | null>(null);
 
   const filteredDiagrams = diagrams.filter(diagram =>
     diagram.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -72,7 +86,7 @@ const Dashboard = () => {
     if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
       return 'Empty diagram';
     }
-    return nodes.slice(0, 3).map((node: any) => node.data?.label || 'Node').join(' → ') +
+    return nodes.slice(0, 3).map((node: any) => node.data?.label || 'Node').join(' → ') + 
            (nodes.length > 3 ? '...' : '');
   };
 
@@ -173,6 +187,85 @@ const Dashboard = () => {
     }
   };
 
+  // Daily costing functions
+  const handleAddCost = () => {
+    setCostFormData({
+      month_name: new Date().toLocaleString('default', { month: 'long' }),
+      date: new Date().toISOString().split('T')[0],
+      costing_reason: "",
+      costing_amount: "",
+      is_earning: false
+    });
+    setEditingCost(null);
+    setIsAddCostDialogOpen(true);
+  };
+
+  const handleEditCost = (cost: any) => {
+    setCostFormData({
+      month_name: cost.month_name,
+      date: cost.date,
+      costing_reason: cost.costing_reason,
+      costing_amount: cost.costing_amount.toString(),
+      is_earning: cost.is_earning
+    });
+    setEditingCost(cost);
+    setIsAddCostDialogOpen(true);
+  };
+
+  const handleCostSubmit = async () => {
+    if (!costFormData.month_name || !costFormData.date || !costFormData.costing_reason || !costFormData.costing_amount) {
+      return;
+    }
+
+    await saveCost(
+      costFormData.month_name,
+      costFormData.date,
+      costFormData.costing_reason,
+      parseFloat(costFormData.costing_amount),
+      costFormData.is_earning,
+      editingCost?.id
+    );
+
+    setIsAddCostDialogOpen(false);
+    setCostFormData({
+      month_name: "",
+      date: "",
+      costing_reason: "",
+      costing_amount: "",
+      is_earning: false
+    });
+    setEditingCost(null);
+  };
+
+  const handleDeleteCost = async (costId: string) => {
+    await deleteCost(costId);
+  };
+
+  // Calculate cost totals
+  const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+  const currentYear = new Date().getFullYear();
+  
+  // Get month number from selected month name for filtering
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                     'July', 'August', 'September', 'October', 'November', 'December'];
+  const selectedMonthIndex = monthNames.indexOf(selectedMonthFilter);
+  
+  const monthlyData = (costs || []).filter(cost => {
+    const costDate = new Date(cost.date);
+    return costDate.getMonth() === selectedMonthIndex && 
+           costDate.getFullYear() === currentYear;
+  });
+
+  const totalMonthlyCosting = monthlyData
+    .filter(cost => !cost.is_earning)
+    .reduce((sum, cost) => sum + parseFloat(cost.costing_amount.toString()), 0);
+    
+  const totalMonthlyEarning = monthlyData
+    .filter(cost => cost.is_earning)
+    .reduce((sum, cost) => sum + parseFloat(cost.costing_amount.toString()), 0);
+    
+  const netEarning = totalMonthlyEarning - totalMonthlyCosting;
+
   // Get unique categories
   const categories = Array.from(new Set(accounts.map(account => account.category))).filter(Boolean);
   
@@ -218,7 +311,7 @@ const Dashboard = () => {
         </div>
 
         {/* Section Navigation */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card 
             className={`p-6 cursor-pointer transition-all hover:shadow-medium group ${
               activeSection === 'diagrams' ? 'ring-2 ring-primary bg-primary/5' : ''
@@ -266,6 +359,23 @@ const Dashboard = () => {
               <div>
                 <h3 className="font-semibold text-lg">Digital Accounts</h3>
                 <p className="text-sm text-muted-foreground">{accounts.length} accounts</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card 
+            className={`p-6 cursor-pointer transition-all hover:shadow-medium group ${
+              activeSection === 'costs' ? 'ring-2 ring-primary bg-primary/5' : ''
+            }`}
+            onClick={() => setActiveSection(activeSection === 'costs' ? null : 'costs')}
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+                <DollarSign className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">Daily Costing</h3>
+                <p className="text-sm text-muted-foreground">{costs.length} entries</p>
               </div>
             </div>
           </Card>
@@ -748,6 +858,264 @@ const Dashboard = () => {
                   </Button>
                   <Button onClick={handleSaveAccount}>
                     {editingAccount ? 'Update' : 'Create'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+
+        {/* Daily Costing Section */}
+        {activeSection === 'costs' && (
+          <div className="space-y-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">Daily Costing</h2>
+                <p className="text-muted-foreground">Track your daily expenses and earnings</p>
+              </div>
+              <Button onClick={handleAddCost} size="lg">
+                <Plus className="w-5 h-5 mr-2" />
+                Add Entry
+              </Button>
+            </div>
+
+            {/* Monthly Summary Cards */}
+            <div className="grid md:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center space-x-2">
+                    <TrendingDown className="w-5 h-5 text-red-500" />
+                    <span>Monthly Expenses</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-600">
+                    ৳{totalMonthlyCosting.toFixed(2)}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedMonthFilter} {currentYear}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center space-x-2">
+                    <TrendingUp className="w-5 h-5 text-green-500" />
+                    <span>Monthly Earnings</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">
+                    ৳{totalMonthlyEarning.toFixed(2)}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedMonthFilter} {currentYear}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center space-x-2">
+                    <DollarSign className="w-5 h-5 text-blue-500" />
+                    <span>Net Result</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${netEarning >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ৳{netEarning.toFixed(2)}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {netEarning >= 0 ? 'Profit' : 'Loss'}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Month Filter */}
+            <div className="flex gap-4 items-center">
+              <label className="text-sm font-medium">Filter by month:</label>
+              <Select value={selectedMonthFilter} onValueChange={setSelectedMonthFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {monthNames.map((month) => (
+                    <SelectItem key={month} value={month}>
+                      {month} {currentYear}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Costing Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Cost Entries</CardTitle>
+                <CardDescription>
+                  Your daily expense and earning records
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {costsLoading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="text-center space-y-4">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                      <p className="text-muted-foreground">Loading cost entries...</p>
+                    </div>
+                  </div>
+                ) : monthlyData.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center mx-auto mb-4">
+                      <DollarSign className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-2">No entries for {selectedMonthFilter}</h3>
+                    <p className="text-muted-foreground mb-4">Start tracking your expenses and earnings</p>
+                    <Button onClick={handleAddCost}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Entry
+                    </Button>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Reason</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {monthlyData.map((cost) => (
+                        <TableRow key={cost.id}>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Calendar className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm">
+                                {new Date(cost.date).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={cost.is_earning ? "default" : "secondary"}>
+                              {cost.is_earning ? 'Earning' : 'Expense'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {cost.costing_reason}
+                          </TableCell>
+                          <TableCell>
+                            <span className={`font-semibold ${cost.is_earning ? 'text-green-600' : 'text-red-600'}`}>
+                              {cost.is_earning ? '+' : '-'}৳{cost.costing_amount.toFixed(2)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditCost(cost)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteCost(cost.id)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Cost Entry Dialog */}
+            <Dialog open={isAddCostDialogOpen} onOpenChange={setIsAddCostDialogOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>{editingCost ? 'Edit Entry' : 'Add New Entry'}</DialogTitle>
+                  <DialogDescription>
+                    {editingCost ? 'Update cost entry' : 'Add a new expense or earning entry'}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Month *</label>
+                    <Select 
+                      value={costFormData.month_name} 
+                      onValueChange={(value) => setCostFormData(prev => ({ ...prev, month_name: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select month" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {monthNames.map((month) => (
+                          <SelectItem key={month} value={month}>
+                            {month}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Date *</label>
+                    <Input
+                      type="date"
+                      value={costFormData.date}
+                      onChange={(e) => setCostFormData(prev => ({ ...prev, date: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Type *</label>
+                    <Select 
+                      value={costFormData.is_earning.toString()} 
+                      onValueChange={(value) => setCostFormData(prev => ({ ...prev, is_earning: value === 'true' }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="false">Expense</SelectItem>
+                        <SelectItem value="true">Earning</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Reason *</label>
+                    <Input
+                      value={costFormData.costing_reason}
+                      onChange={(e) => setCostFormData(prev => ({ ...prev, costing_reason: e.target.value }))}
+                      placeholder="e.g., Office supplies, Client payment..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Amount (৳) *</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={costFormData.costing_amount}
+                      onChange={(e) => setCostFormData(prev => ({ ...prev, costing_amount: e.target.value }))}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddCostDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCostSubmit}>
+                    {editingCost ? 'Update' : 'Add Entry'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
