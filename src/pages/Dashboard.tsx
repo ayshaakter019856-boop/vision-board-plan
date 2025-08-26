@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield } from "lucide-react";
+import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDiagrams } from "@/hooks/useDiagrams";
@@ -152,6 +152,21 @@ const Dashboard = () => {
       ...prev,
       [accountId]: !prev[accountId]
     }));
+  };
+
+  const copyAccountDetails = async (account: any) => {
+    const details = [
+      account.email ? `Email: ${account.email}` : '',
+      account.password ? `Password: ${account.password}` : '',
+      account.note ? `Note: ${account.note}` : ''
+    ].filter(Boolean).join('\n');
+
+    try {
+      await navigator.clipboard.writeText(details);
+      // You could add a toast notification here if needed
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+    }
   };
 
   // Get unique categories
@@ -717,6 +732,15 @@ const Dashboard = () => {
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-secondary hover:text-secondary-foreground"
+                                onClick={() => copyAccountDetails(account)}
+                                title="Copy email, password and note"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
