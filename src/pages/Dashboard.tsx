@@ -140,39 +140,13 @@ const Dashboard = () => {
           {/* Existing Projects */}
           {!loading && filteredDiagrams.map((diagram) => (
             <Card key={diagram.id} className="p-6 hover:shadow-medium transition-shadow group relative">
-              <Link to={`/builder/${diagram.id}`} className="block">
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2 flex-1">
-                      <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                        {diagram.title}
-                      </h3>
-                      {diagram.description && (
-                        <p className="text-sm text-muted-foreground">{diagram.description}</p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {getPreview(diagram.nodes)}
-                  </p>
-                  
-                  <div className="flex items-center justify-between pt-2 border-t border-border">
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {formatDate(diagram.updated_at)}
-                    </div>
-                  </div>
-                </div>
-              </Link>
-              
-              {/* Delete Button */}
+              {/* Delete Button - positioned absolute with z-index */}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground z-10"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -199,6 +173,33 @@ const Dashboard = () => {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+
+              {/* Clickable content area */}
+              <Link to={`/builder/${diagram.id}`} className="block">
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2 flex-1 pr-10">
+                      <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                        {diagram.title}
+                      </h3>
+                      {diagram.description && (
+                        <p className="text-sm text-muted-foreground">{diagram.description}</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {getPreview(diagram.nodes)}
+                  </p>
+                  
+                  <div className="flex items-center justify-between pt-2 border-t border-border">
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      <Calendar className="w-3 h-3 mr-1" />
+                      {formatDate(diagram.updated_at)}
+                    </div>
+                  </div>
+                </div>
+              </Link>
             </Card>
           ))}
         </div>
