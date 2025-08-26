@@ -10,6 +10,7 @@ import { useDiagrams } from "@/hooks/useDiagrams";
 import { useNotes } from "@/hooks/useNotes";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useCosts } from "@/hooks/useCosts";
+import { useProfile } from "@/hooks/useProfile";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +22,7 @@ const Dashboard = () => {
   const { notes, loading: notesLoading, saveNote, deleteNote } = useNotes();
   const { accounts, loading: accountsLoading, createAccount, updateAccount, deleteAccount } = useAccounts();
   const { costs, loading: costsLoading, saveCost, deleteCost } = useCosts();
+  const { profile, isFreePlan, isPlanExpired, daysLeft } = useProfile();
   const [searchTerm, setSearchTerm] = useState('');
   const [hiddenDiagrams, setHiddenDiagrams] = useState<Set<string>>(new Set());
   
@@ -282,10 +284,25 @@ const Dashboard = () => {
             <span className="text-xl font-bold">MarketFlow</span>
           </div>
           <div className="flex items-center space-x-4">
+            {/* Current Plan Display */}
+            <div className="flex items-center space-x-2 text-sm bg-muted/50 px-3 py-1.5 rounded-lg">
+              <Badge variant={isFreePlan ? "secondary" : "default"} className="text-xs">
+                {profile?.current_plan || 'Free Plan'}
+              </Badge>
+              {isFreePlan && !isPlanExpired && (
+                <span className="text-muted-foreground">
+                  {daysLeft} days left
+                </span>
+              )}
+              {isPlanExpired && (
+                <span className="text-destructive text-xs">Expired</span>
+              )}
+            </div>
+            
             <Link to="/pricing">
               <Button variant="outline" size="sm">
                 <ShoppingBag className="w-4 h-4 mr-2" />
-                Upgrade Plan
+                {isFreePlan || isPlanExpired ? 'Upgrade Plan' : 'Manage Plan'}
               </Button>
             </Link>
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
