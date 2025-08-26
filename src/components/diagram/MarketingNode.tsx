@@ -15,7 +15,8 @@ import {
   Users, 
   BarChart3,
   StickyNote,
-  Trash2
+  Trash2,
+  Copy
 } from "lucide-react";
 
 interface MarketingNodeData {
@@ -58,6 +59,23 @@ export const MarketingNode = memo(({ data, id, selected }: NodeProps) => {
     setEdges((edges) => edges.filter((edge) => edge.source !== id && edge.target !== id));
   };
 
+  const handleDuplicate = () => {
+    const duplicatedNode = {
+      id: `${Date.now()}`, // Generate unique ID
+      type: 'marketing',
+      position: { 
+        x: Math.random() * 200 + 100, 
+        y: Math.random() * 200 + 100 
+      },
+      data: {
+        ...nodeData,
+        label: `${nodeData.label} (Copy)`
+      },
+    };
+    
+    setNodes((nodes) => [...nodes, duplicatedNode]);
+  };
+
   return (
     <div className="relative">
       <Handle 
@@ -98,6 +116,15 @@ export const MarketingNode = memo(({ data, id, selected }: NodeProps) => {
               onClick={() => setIsEditing(!isEditing)}
             >
               <Edit3 className="w-3 h-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={handleDuplicate}
+              title="Duplicate node"
+            >
+              <Copy className="w-3 h-3" />
             </Button>
             <Button
               variant="ghost"

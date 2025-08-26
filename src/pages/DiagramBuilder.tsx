@@ -216,6 +216,259 @@ const DiagramBuilder = () => {
     return baseStyles[category as keyof typeof baseStyles] || '';
   };
 
+  const loadTemplate = (templateType: string) => {
+    const templates = {
+      'sales-funnel': {
+        nodes: [
+          {
+            id: 'sf1',
+            type: 'marketing',
+            position: { x: 100, y: 50 },
+            data: { label: 'Awareness', category: 'ads', description: 'Generate brand awareness through targeted advertising' },
+          },
+          {
+            id: 'sf2',
+            type: 'marketing',
+            position: { x: 300, y: 120 },
+            data: { label: 'Interest', category: 'branding', description: 'Capture interest with compelling content' },
+          },
+          {
+            id: 'sf3',
+            type: 'marketing',
+            position: { x: 500, y: 190 },
+            data: { label: 'Consideration', category: 'sales', description: 'Nurture leads with targeted follow-ups' },
+          },
+          {
+            id: 'sf4',
+            type: 'marketing',
+            position: { x: 700, y: 260 },
+            data: { label: 'Purchase', category: 'sales', description: 'Convert leads into customers' },
+          },
+          {
+            id: 'sf5',
+            type: 'marketing',
+            position: { x: 900, y: 330 },
+            data: { label: 'Retention', category: 'retention', description: 'Keep customers engaged and loyal' },
+          },
+        ],
+        edges: [
+          { id: 'e-sf1-sf2', source: 'sf1', target: 'sf2', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-sf2-sf3', source: 'sf2', target: 'sf3', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-sf3-sf4', source: 'sf3', target: 'sf4', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-sf4-sf5', source: 'sf4', target: 'sf5', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+        ],
+      },
+      'customer-journey': {
+        nodes: [
+          {
+            id: 'cj1',
+            type: 'marketing',
+            position: { x: 150, y: 100 },
+            data: { label: 'Discovery', category: 'analytics', description: 'Customer becomes aware of their problem' },
+          },
+          {
+            id: 'cj2',
+            type: 'marketing',
+            position: { x: 350, y: 100 },
+            data: { label: 'Research', category: 'branding', description: 'Customer researches solutions' },
+          },
+          {
+            id: 'cj3',
+            type: 'marketing',
+            position: { x: 550, y: 100 },
+            data: { label: 'Evaluation', category: 'sales', description: 'Customer compares options' },
+          },
+          {
+            id: 'cj4',
+            type: 'marketing',
+            position: { x: 750, y: 100 },
+            data: { label: 'Purchase', category: 'sales', description: 'Customer makes a decision to buy' },
+          },
+          {
+            id: 'cj5',
+            type: 'marketing',
+            position: { x: 350, y: 250 },
+            data: { label: 'Onboarding', category: 'retention', description: 'Help customer get started' },
+          },
+          {
+            id: 'cj6',
+            type: 'marketing',
+            position: { x: 550, y: 250 },
+            data: { label: 'Support', category: 'retention', description: 'Ongoing customer support' },
+          },
+          {
+            id: 'cj7',
+            type: 'marketing',
+            position: { x: 750, y: 250 },
+            data: { label: 'Advocacy', category: 'retention', description: 'Customer becomes brand advocate' },
+          },
+        ],
+        edges: [
+          { id: 'e-cj1-cj2', source: 'cj1', target: 'cj2', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cj2-cj3', source: 'cj2', target: 'cj3', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cj3-cj4', source: 'cj3', target: 'cj4', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cj4-cj5', source: 'cj4', target: 'cj5', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cj5-cj6', source: 'cj5', target: 'cj6', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cj6-cj7', source: 'cj6', target: 'cj7', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+        ],
+      },
+      'campaign-flow': {
+        nodes: [
+          {
+            id: 'cf1',
+            type: 'marketing',
+            position: { x: 200, y: 50 },
+            data: { label: 'Campaign Strategy', category: 'branding', description: 'Define campaign goals and messaging' },
+          },
+          {
+            id: 'cf2',
+            type: 'marketing',
+            position: { x: 100, y: 150 },
+            data: { label: 'Content Creation', category: 'branding', description: 'Create campaign assets and copy' },
+          },
+          {
+            id: 'cf3',
+            type: 'marketing',
+            position: { x: 300, y: 150 },
+            data: { label: 'Media Planning', category: 'ads', description: 'Plan media channels and budget allocation' },
+          },
+          {
+            id: 'cf4',
+            type: 'marketing',
+            position: { x: 200, y: 250 },
+            data: { label: 'Campaign Launch', category: 'ads', description: 'Execute campaign across channels' },
+          },
+          {
+            id: 'cf5',
+            type: 'marketing',
+            position: { x: 100, y: 350 },
+            data: { label: 'Performance Tracking', category: 'analytics', description: 'Monitor campaign metrics' },
+          },
+          {
+            id: 'cf6',
+            type: 'marketing',
+            position: { x: 300, y: 350 },
+            data: { label: 'Optimization', category: 'analytics', description: 'Adjust and optimize performance' },
+          },
+        ],
+        edges: [
+          { id: 'e-cf1-cf2', source: 'cf1', target: 'cf2', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cf1-cf3', source: 'cf1', target: 'cf3', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cf2-cf4', source: 'cf2', target: 'cf4', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cf3-cf4', source: 'cf3', target: 'cf4', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cf4-cf5', source: 'cf4', target: 'cf5', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cf4-cf6', source: 'cf4', target: 'cf6', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+        ],
+      },
+      'content-strategy': {
+        nodes: [
+          {
+            id: 'cs1',
+            type: 'marketing',
+            position: { x: 200, y: 50 },
+            data: { label: 'Content Planning', category: 'branding', description: 'Plan content themes and calendar' },
+          },
+          {
+            id: 'cs2',
+            type: 'marketing',
+            position: { x: 100, y: 150 },
+            data: { label: 'Blog Content', category: 'branding', description: 'Create educational blog posts' },
+          },
+          {
+            id: 'cs3',
+            type: 'marketing',
+            position: { x: 300, y: 150 },
+            data: { label: 'Social Media', category: 'ads', description: 'Develop social media content' },
+          },
+          {
+            id: 'cs4',
+            type: 'marketing',
+            position: { x: 500, y: 150 },
+            data: { label: 'Video Content', category: 'branding', description: 'Produce video content' },
+          },
+          {
+            id: 'cs5',
+            type: 'marketing',
+            position: { x: 200, y: 250 },
+            data: { label: 'Content Distribution', category: 'ads', description: 'Distribute across channels' },
+          },
+          {
+            id: 'cs6',
+            type: 'marketing',
+            position: { x: 400, y: 250 },
+            data: { label: 'Performance Analysis', category: 'analytics', description: 'Analyze content performance' },
+          },
+        ],
+        edges: [
+          { id: 'e-cs1-cs2', source: 'cs1', target: 'cs2', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cs1-cs3', source: 'cs1', target: 'cs3', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cs1-cs4', source: 'cs1', target: 'cs4', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cs2-cs5', source: 'cs2', target: 'cs5', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cs3-cs5', source: 'cs3', target: 'cs5', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cs4-cs6', source: 'cs4', target: 'cs6', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-cs5-cs6', source: 'cs5', target: 'cs6', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+        ],
+      },
+      'social-media': {
+        nodes: [
+          {
+            id: 'sm1',
+            type: 'marketing',
+            position: { x: 200, y: 50 },
+            data: { label: 'Social Strategy', category: 'branding', description: 'Define social media strategy' },
+          },
+          {
+            id: 'sm2',
+            type: 'marketing',
+            position: { x: 50, y: 150 },
+            data: { label: 'Facebook', category: 'ads', description: 'Facebook marketing campaigns' },
+          },
+          {
+            id: 'sm3',
+            type: 'marketing',
+            position: { x: 200, y: 150 },
+            data: { label: 'Instagram', category: 'ads', description: 'Instagram content and ads' },
+          },
+          {
+            id: 'sm4',
+            type: 'marketing',
+            position: { x: 350, y: 150 },
+            data: { label: 'LinkedIn', category: 'ads', description: 'Professional networking content' },
+          },
+          {
+            id: 'sm5',
+            type: 'marketing',
+            position: { x: 125, y: 250 },
+            data: { label: 'Engagement', category: 'retention', description: 'Community management and engagement' },
+          },
+          {
+            id: 'sm6',
+            type: 'marketing',
+            position: { x: 275, y: 250 },
+            data: { label: 'Analytics', category: 'analytics', description: 'Track social media performance' },
+          },
+        ],
+        edges: [
+          { id: 'e-sm1-sm2', source: 'sm1', target: 'sm2', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-sm1-sm3', source: 'sm1', target: 'sm3', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-sm1-sm4', source: 'sm1', target: 'sm4', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-sm2-sm5', source: 'sm2', target: 'sm5', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-sm3-sm5', source: 'sm3', target: 'sm5', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-sm4-sm6', source: 'sm4', target: 'sm6', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+          { id: 'e-sm5-sm6', source: 'sm5', target: 'sm6', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
+        ],
+      },
+    };
+
+    const template = templates[templateType as keyof typeof templates];
+    if (template) {
+      setNodes(template.nodes);
+      setEdges(template.edges);
+      setDiagramTitle(`${templateType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} Template`);
+      toast.success(`Loaded ${templateType.replace('-', ' ')} template!`);
+    }
+  };
+
   return (
     <div className="h-screen bg-background flex flex-col">
       {/* Header */}
@@ -338,14 +591,45 @@ const DiagramBuilder = () => {
           <Card className="p-4">
             <h3 className="font-semibold mb-4">Quick Templates</h3>
             <div className="space-y-2">
-              <Button variant="outline" size="sm" className="w-full justify-start">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full justify-start"
+                onClick={() => loadTemplate('sales-funnel')}
+              >
                 Sales Funnel Template
               </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full justify-start"
+                onClick={() => loadTemplate('customer-journey')}
+              >
                 Customer Journey
               </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full justify-start"
+                onClick={() => loadTemplate('campaign-flow')}
+              >
                 Campaign Flow
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full justify-start"
+                onClick={() => loadTemplate('content-strategy')}
+              >
+                Content Strategy
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full justify-start"
+                onClick={() => loadTemplate('social-media')}
+              >
+                Social Media Plan
               </Button>
             </div>
           </Card>
