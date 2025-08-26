@@ -282,6 +282,12 @@ const Dashboard = () => {
             <span className="text-xl font-bold">MarketFlow</span>
           </div>
           <div className="flex items-center space-x-4">
+            <Link to="/pricing">
+              <Button variant="outline" size="sm">
+                <ShoppingBag className="w-4 h-4 mr-2" />
+                Upgrade Plan
+              </Button>
+            </Link>
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
               <User className="w-4 h-4" />
               <span>{user?.email}</span>
