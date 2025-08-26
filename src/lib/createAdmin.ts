@@ -25,4 +25,5 @@ export const createAdminUser = async () => {
 };
 
 // Call this function in browser console to create the admin user
-// createAdminUser();
+// Open browser console and run: createAdminUser()
+(window as any).createAdminUser = createAdminUser;
