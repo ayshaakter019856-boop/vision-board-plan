@@ -10,6 +10,7 @@ import { useDiagrams } from "@/hooks/useDiagrams";
 import { useNotes } from "@/hooks/useNotes";
 import { useAccounts } from "@/hooks/useAccounts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Eye, EyeOff, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 
@@ -629,11 +630,11 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* Accounts Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Accounts Table */}
+            <div className="space-y-4">
               {/* Loading State */}
               {accountsLoading && (
-                <div className="col-span-full flex justify-center py-12">
+                <div className="flex justify-center py-12">
                   <div className="text-center space-y-4">
                     <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
                     <p className="text-muted-foreground">Loading accounts...</p>
@@ -643,7 +644,7 @@ const Dashboard = () => {
 
               {/* Empty State */}
               {!accountsLoading && filteredAccounts.length === 0 && (
-                <div className="col-span-full text-center py-12">
+                <div className="text-center py-12">
                   <div className="space-y-4">
                     <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto" />
                     <div>
@@ -654,89 +655,97 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* Accounts */}
-              {!accountsLoading && filteredAccounts.map((account) => (
-                <Card key={account.id} className="p-6 hover:shadow-medium transition-shadow group relative">
-                  {/* Action Buttons */}
-                  <div className="absolute top-2 right-2 z-10 flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-primary hover:text-primary-foreground"
-                      onClick={() => handleEditAccount(account)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                      onClick={() => deleteAccount(account.id)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="pr-10">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                          {account.product_name}
-                        </h3>
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                          {account.category}
-                        </span>
-                      </div>
-                      
-                      {account.customer_name && (
-                        <p className="text-sm text-muted-foreground">
-                          Customer: {account.customer_name}
-                        </p>
-                      )}
-                      
-                      {account.email && (
-                        <p className="text-sm text-muted-foreground">
-                          Email: {account.email}
-                        </p>
-                      )}
-                      
-                      {account.password && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>Password:</span>
-                          <span className="font-mono">
-                            {showPassword[account.id] ? account.password : '••••••••'}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() => togglePasswordVisibility(account.id)}
-                          >
-                            {showPassword[account.id] ? (
-                              <EyeOff className="w-3 h-3" />
+              {/* Accounts Table */}
+              {!accountsLoading && filteredAccounts.length > 0 && (
+                <Card>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order Date</TableHead>
+                        <TableHead>Product Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Password</TableHead>
+                        <TableHead>Buyer/Seller Name</TableHead>
+                        <TableHead>Note</TableHead>
+                        <TableHead className="w-20">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAccounts.map((account) => (
+                        <TableRow key={account.id} className="hover:bg-muted/50">
+                          <TableCell className="text-sm">
+                            {account.order_date ? new Date(account.order_date).toLocaleDateString() : formatDate(account.created_at)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{account.product_name}</span>
+                              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                                {account.category}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {account.email || '-'}
+                          </TableCell>
+                          <TableCell>
+                            {account.password ? (
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-sm">
+                                  {showPassword[account.id] ? account.password : '••••••••'}
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => togglePasswordVisibility(account.id)}
+                                >
+                                  {showPassword[account.id] ? (
+                                    <EyeOff className="w-3 h-3" />
+                                  ) : (
+                                    <Eye className="w-3 h-3" />
+                                  )}
+                                </Button>
+                              </div>
                             ) : (
-                              <Eye className="w-3 h-3" />
+                              <span className="text-muted-foreground">-</span>
                             )}
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {account.note && (
-                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                          {account.note}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center justify-between pt-2 border-t border-border">
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        {account.order_date ? new Date(account.order_date).toLocaleDateString() : formatDate(account.created_at)}
-                      </div>
-                    </div>
-                  </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {account.customer_name || '-'}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground max-w-xs">
+                            {account.note ? (
+                              <span className="line-clamp-2">{account.note}</span>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-primary hover:text-primary-foreground"
+                                onClick={() => handleEditAccount(account)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                                onClick={() => deleteAccount(account.id)}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </Card>
-              ))}
+              )}
             </div>
           </div>
         )}
