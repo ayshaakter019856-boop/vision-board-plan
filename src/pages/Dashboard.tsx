@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote } from "lucide-react";
+import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDiagrams } from "@/hooks/useDiagrams";
@@ -41,6 +41,9 @@ const Dashboard = () => {
   });
   const [showPassword, setShowPassword] = useState<{[key: string]: boolean}>({});
   const [selectedCategory, setSelectedCategory] = useState('all');
+  
+  // Section visibility state
+  const [activeSection, setActiveSection] = useState<'diagrams' | 'notes' | 'accounts' | null>(null);
 
   const filteredDiagrams = diagrams.filter(diagram =>
     diagram.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -183,292 +186,329 @@ const Dashboard = () => {
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Marketing Plans</h1>
-            <p className="text-muted-foreground">Create and manage your visual marketing strategies</p>
-          </div>
-          <Link to="/builder">
-            <Button size="lg" className="shrink-0">
-              <Plus className="w-5 h-5 mr-2" />
-              New Plan
-            </Button>
-          </Link>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search marketing plans..." 
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">All Categories</Button>
-            <Button variant="outline" size="sm">Recent</Button>
+            <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+            <p className="text-muted-foreground">Manage your marketing plans, notes, and digital accounts</p>
           </div>
         </div>
 
-        {/* Projects Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Create New Card */}
-          <Link to="/builder">
-            <Card className="p-6 border-2 border-dashed border-border hover:border-primary/50 transition-colors cursor-pointer group">
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto group-hover:scale-105 transition-transform">
-                  <Plus className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Create New Plan</h3>
-                  <p className="text-muted-foreground text-sm">Start mapping your marketing strategy</p>
-                </div>
+        {/* Section Navigation */}
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <Card 
+            className={`p-6 cursor-pointer transition-all hover:shadow-medium group ${
+              activeSection === 'diagrams' ? 'ring-2 ring-primary bg-primary/5' : ''
+            }`}
+            onClick={() => setActiveSection(activeSection === 'diagrams' ? null : 'diagrams')}
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Workflow className="w-6 h-6 text-white" />
               </div>
-            </Card>
-          </Link>
-
-          {/* Loading State */}
-          {loading && (
-            <div className="col-span-full flex justify-center py-12">
-              <div className="text-center space-y-4">
-                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p className="text-muted-foreground">Loading diagrams...</p>
+              <div>
+                <h3 className="font-semibold text-lg">Marketing Plans</h3>
+                <p className="text-sm text-muted-foreground">{diagrams.length} diagrams</p>
               </div>
             </div>
-          )}
+          </Card>
 
-          {/* Empty State */}
-          {!loading && filteredDiagrams.length === 0 && (
-            <div className="col-span-full text-center py-12">
-              <div className="space-y-4">
-                <FolderOpen className="w-16 h-16 text-muted-foreground mx-auto" />
-                <div>
-                  <h3 className="text-lg font-semibold">No diagrams found</h3>
-                  <p className="text-muted-foreground">
-                    {searchTerm ? 'Try adjusting your search term' : 'Create your first marketing diagram to get started'}
-                  </p>
-                </div>
+          <Card 
+            className={`p-6 cursor-pointer transition-all hover:shadow-medium group ${
+              activeSection === 'notes' ? 'ring-2 ring-primary bg-primary/5' : ''
+            }`}
+            onClick={() => setActiveSection(activeSection === 'notes' ? null : 'notes')}
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+                <FileText className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">Notes</h3>
+                <p className="text-sm text-muted-foreground">{notes.length} notes</p>
               </div>
             </div>
-          )}
+          </Card>
 
-          {/* Existing Projects */}
-          {!loading && filteredDiagrams.map((diagram) => (
-            <Card key={diagram.id} className="p-6 hover:shadow-medium transition-shadow group relative">
-              {/* Hide Button - positioned absolute with z-index */}
-              <div className="absolute top-2 right-2 z-10">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    deleteDiagram(diagram.id);
-                  }}
-                >
-                  <X className="w-4 h-4" />
+          <Card 
+            className={`p-6 cursor-pointer transition-all hover:shadow-medium group ${
+              activeSection === 'accounts' ? 'ring-2 ring-primary bg-primary/5' : ''
+            }`}
+            onClick={() => setActiveSection(activeSection === 'accounts' ? null : 'accounts')}
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">Digital Accounts</h3>
+                <p className="text-sm text-muted-foreground">{accounts.length} accounts</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Marketing Plans Section */}
+        {activeSection === 'diagrams' && (
+          <div className="space-y-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">Marketing Plans</h2>
+                <p className="text-muted-foreground">Create and manage your visual marketing strategies</p>
+              </div>
+              <Link to="/builder">
+                <Button size="lg" className="shrink-0">
+                  <Plus className="w-5 h-5 mr-2" />
+                  New Plan
                 </Button>
-              </div>
-
-              {/* Clickable content area */}
-              <Link to={`/builder/${diagram.id}`} className="block">
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2 flex-1 pr-10">
-                      <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                        {diagram.title}
-                      </h3>
-                      {diagram.description && (
-                        <p className="text-sm text-muted-foreground">{diagram.description}</p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {getPreview(diagram.nodes)}
-                  </p>
-                  
-                  <div className="flex items-center justify-between pt-2 border-t border-border">
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {formatDate(diagram.updated_at)}
-                    </div>
-                  </div>
-                </div>
               </Link>
-            </Card>
-          ))}
-        </div>
+            </div>
 
-        {/* Quick Actions */}
-        <div className="mt-12 p-6 bg-gradient-secondary rounded-2xl">
-          <div className="text-center space-y-4">
-            <h2 className="text-2xl font-bold">Quick Start Templates</h2>
-            <p className="text-muted-foreground">Jump-start your planning with pre-built templates</p>
-            
-            <div className="grid md:grid-cols-3 gap-4 mt-6">
-              <Button variant="outline" className="h-auto p-4 flex-col space-y-2">
-                <div className="w-8 h-8 bg-sales/10 rounded-lg flex items-center justify-center">
-                  <span className="text-sales text-sm font-bold">S</span>
+            {/* Search and Filters */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search marketing plans..." 
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Projects Grid */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Create New Card */}
+              <Link to="/builder">
+                <Card className="p-6 border-2 border-dashed border-border hover:border-primary/50 transition-colors cursor-pointer group">
+                  <div className="text-center space-y-4">
+                    <div className="w-16 h-16 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto group-hover:scale-105 transition-transform">
+                      <Plus className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">Create New Plan</h3>
+                      <p className="text-muted-foreground text-sm">Start mapping your marketing strategy</p>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+
+              {/* Loading State */}
+              {loading && (
+                <div className="col-span-full flex justify-center py-12">
+                  <div className="text-center space-y-4">
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-muted-foreground">Loading diagrams...</p>
+                  </div>
                 </div>
-                <span>Sales Funnel</span>
-              </Button>
-              
-              <Button variant="outline" className="h-auto p-4 flex-col space-y-2">
-                <div className="w-8 h-8 bg-branding/10 rounded-lg flex items-center justify-center">
-                  <span className="text-branding text-sm font-bold">B</span>
+              )}
+
+              {/* Empty State */}
+              {!loading && filteredDiagrams.length === 0 && (
+                <div className="col-span-full text-center py-12">
+                  <div className="space-y-4">
+                    <FolderOpen className="w-16 h-16 text-muted-foreground mx-auto" />
+                    <div>
+                      <h3 className="text-lg font-semibold">No diagrams found</h3>
+                      <p className="text-muted-foreground">
+                        {searchTerm ? 'Try adjusting your search term' : 'Create your first marketing diagram to get started'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <span>Brand Strategy</span>
-              </Button>
-              
-              <Button variant="outline" className="h-auto p-4 flex-col space-y-2">
-                <div className="w-8 h-8 bg-ads/10 rounded-lg flex items-center justify-center">
-                  <span className="text-ads text-sm font-bold">A</span>
-                </div>
-                <span>Ad Campaign</span>
-              </Button>
+              )}
+
+              {/* Existing Projects */}
+              {!loading && filteredDiagrams.map((diagram) => (
+                <Card key={diagram.id} className="p-6 hover:shadow-medium transition-shadow group relative">
+                  {/* Hide Button - positioned absolute with z-index */}
+                  <div className="absolute top-2 right-2 z-10">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        deleteDiagram(diagram.id);
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {/* Clickable content area */}
+                  <Link to={`/builder/${diagram.id}`} className="block">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2 flex-1 pr-10">
+                          <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                            {diagram.title}
+                          </h3>
+                          {diagram.description && (
+                            <p className="text-sm text-muted-foreground">{diagram.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {getPreview(diagram.nodes)}
+                      </p>
+                      
+                      <div className="flex items-center justify-between pt-2 border-t border-border">
+                        <div className="flex items-center text-xs text-muted-foreground">
+                          <Calendar className="w-3 h-3 mr-1" />
+                          {formatDate(diagram.updated_at)}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </Card>
+              ))}
             </div>
           </div>
-        </div>
+        )}
 
         {/* Notes Section */}
-        <div className="mt-16">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">My Notes</h2>
-              <p className="text-muted-foreground">Keep track of your marketing plans and ideas</p>
-            </div>
-            <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="lg" onClick={handleNewNote}>
-                  <Plus className="w-5 h-5 mr-2" />
-                  New Note
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{editingNote ? 'Edit Note' : 'Create New Note'}</DialogTitle>
-                  <DialogDescription>
-                    {editingNote ? 'Update your note' : 'Add a new note to keep track of your marketing plans'}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="note-title" className="text-sm font-medium">Title</label>
-                    <Input
-                      id="note-title"
-                      value={noteTitle}
-                      onChange={(e) => setNoteTitle(e.target.value)}
-                      placeholder="Enter note title..."
-                    />
+        {activeSection === 'notes' && (
+          <div className="space-y-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">My Notes</h2>
+                <p className="text-muted-foreground">Keep track of your marketing plans and ideas</p>
+              </div>
+              <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="lg" onClick={handleNewNote}>
+                    <Plus className="w-5 h-5 mr-2" />
+                    New Note
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingNote ? 'Edit Note' : 'Create New Note'}</DialogTitle>
+                    <DialogDescription>
+                      {editingNote ? 'Update your note' : 'Add a new note to keep track of your marketing plans'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="note-title" className="text-sm font-medium">Title</label>
+                      <Input
+                        id="note-title"
+                        value={noteTitle}
+                        onChange={(e) => setNoteTitle(e.target.value)}
+                        placeholder="Enter note title..."
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="note-content" className="text-sm font-medium">Content</label>
+                      <Textarea
+                        id="note-content"
+                        value={noteContent}
+                        onChange={(e) => setNoteContent(e.target.value)}
+                        placeholder="Write your note content here..."
+                        rows={6}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label htmlFor="note-content" className="text-sm font-medium">Content</label>
-                    <Textarea
-                      id="note-content"
-                      value={noteContent}
-                      onChange={(e) => setNoteContent(e.target.value)}
-                      placeholder="Write your note content here..."
-                      rows={6}
-                    />
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsNoteDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleSaveNote}>
+                      {editingNote ? 'Update Note' : 'Save Note'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* Notes Grid */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Loading State */}
+              {notesLoading && (
+                <div className="col-span-full flex justify-center py-12">
+                  <div className="text-center space-y-4">
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-muted-foreground">Loading notes...</p>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsNoteDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSaveNote}>
-                    {editingNote ? 'Update Note' : 'Save Note'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+              )}
 
-          {/* Notes Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Loading State */}
-            {notesLoading && (
-              <div className="col-span-full flex justify-center py-12">
-                <div className="text-center space-y-4">
-                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                  <p className="text-muted-foreground">Loading notes...</p>
+              {/* Empty State */}
+              {!notesLoading && notes.length === 0 && (
+                <div className="col-span-full text-center py-12">
+                  <div className="space-y-4">
+                    <StickyNote className="w-16 h-16 text-muted-foreground mx-auto" />
+                    <div>
+                      <h3 className="text-lg font-semibold">No notes yet</h3>
+                      <p className="text-muted-foreground">Create your first note to start organizing your ideas</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {!notesLoading && notes.map((note) => (
+                <Card key={note.id} className="p-6 hover:shadow-medium transition-shadow group relative">
+                  {/* Edit Button */}
+                  <div className="absolute top-2 right-2 z-10 flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-primary hover:text-primary-foreground"
+                      onClick={() => handleEditNote(note)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={() => deleteNote(note.id)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="pr-10">
+                      <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                        {note.title}
+                      </h3>
+                      {note.content && (
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-3">
+                          {note.content}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        {formatDate(note.updated_at)}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Digital Accounts Section */}
+        {activeSection === 'accounts' && (
+          <div className="space-y-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">Digital Accounts</h2>
+                <p className="text-muted-foreground">Securely manage your account credentials</p>
+                <div className="mt-2 p-3 bg-muted rounded-lg text-sm text-muted-foreground">
+                  <div className="flex items-start gap-2">
+                    <div className="w-1 h-1 bg-primary rounded-full mt-2 shrink-0"></div>
+                    <span>All sensitive data is encrypted using AES-256 encryption before storage. Your encryption key is unique to your session and is cleared when you log out.</span>
+                  </div>
                 </div>
               </div>
-            )}
-
-            {/* Empty State */}
-            {!notesLoading && notes.length === 0 && (
-              <div className="col-span-full text-center py-12">
-                <div className="space-y-4">
-                  <StickyNote className="w-16 h-16 text-muted-foreground mx-auto" />
-                  <div>
-                    <h3 className="text-lg font-semibold">No notes yet</h3>
-                    <p className="text-muted-foreground">Create your first note to start organizing your ideas</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Notes */}
-            {!notesLoading && notes.map((note) => (
-              <Card key={note.id} className="p-6 hover:shadow-medium transition-shadow group relative">
-                {/* Edit Button */}
-                <div className="absolute top-2 right-2 z-10 flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-primary hover:text-primary-foreground"
-                    onClick={() => handleEditNote(note)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                    onClick={() => deleteNote(note.id)}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                <div className="space-y-4 pr-16">
-                  <h3 className="font-semibold text-lg line-clamp-2">{note.title}</h3>
-                  {note.content && (
-                    <p className="text-sm text-muted-foreground line-clamp-4">{note.content}</p>
-                  )}
-                  <div className="flex items-center text-xs text-muted-foreground pt-2 border-t border-border">
-                    <Calendar className="w-3 h-3 mr-1" />
-                    {formatDate(note.updated_at)}
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Accounts Section */}
-        <div className="mt-16">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Digital Product Accounts</h2>
-              <p className="text-muted-foreground">Manage your digital product customer accounts</p>
-            </div>
-            <div className="flex gap-4">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map(category => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <Dialog open={isAccountDialogOpen} onOpenChange={setIsAccountDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="lg" onClick={handleNewAccount}>
@@ -476,70 +516,77 @@ const Dashboard = () => {
                     New Account
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-md">
                   <DialogHeader>
                     <DialogTitle>{editingAccount ? 'Edit Account' : 'Create New Account'}</DialogTitle>
                     <DialogDescription>
-                      {editingAccount ? 'Update account information' : 'Add a new digital product account'}
+                      {editingAccount ? 'Update account information' : 'Add a new digital account with secure encryption'}
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium">Product Name *</label>
+                      <label htmlFor="product-name" className="text-sm font-medium">Product/Service Name *</label>
                       <Input
+                        id="product-name"
                         value={accountForm.product_name}
-                        onChange={(e) => setAccountForm(prev => ({...prev, product_name: e.target.value}))}
-                        placeholder="Enter product name..."
+                        onChange={(e) => setAccountForm({...accountForm, product_name: e.target.value})}
+                        placeholder="e.g. Netflix, Spotify, Gmail"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Category *</label>
+                      <label htmlFor="category" className="text-sm font-medium">Category *</label>
                       <Input
+                        id="category"
                         value={accountForm.category}
-                        onChange={(e) => setAccountForm(prev => ({...prev, category: e.target.value}))}
-                        placeholder="Enter category..."
+                        onChange={(e) => setAccountForm({...accountForm, category: e.target.value})}
+                        placeholder="e.g. Streaming, Music, Email"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Email</label>
+                      <label htmlFor="email" className="text-sm font-medium">Email</label>
                       <Input
+                        id="email"
                         type="email"
                         value={accountForm.email}
-                        onChange={(e) => setAccountForm(prev => ({...prev, email: e.target.value}))}
-                        placeholder="Enter email..."
+                        onChange={(e) => setAccountForm({...accountForm, email: e.target.value})}
+                        placeholder="account@example.com"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Password</label>
+                      <label htmlFor="password" className="text-sm font-medium">Password</label>
                       <Input
+                        id="password"
                         type="password"
                         value={accountForm.password}
-                        onChange={(e) => setAccountForm(prev => ({...prev, password: e.target.value}))}
-                        placeholder="Enter password..."
+                        onChange={(e) => setAccountForm({...accountForm, password: e.target.value})}
+                        placeholder="••••••••"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Customer Name</label>
+                      <label htmlFor="customer-name" className="text-sm font-medium">Customer Name</label>
                       <Input
+                        id="customer-name"
                         value={accountForm.customer_name}
-                        onChange={(e) => setAccountForm(prev => ({...prev, customer_name: e.target.value}))}
-                        placeholder="Enter customer name..."
+                        onChange={(e) => setAccountForm({...accountForm, customer_name: e.target.value})}
+                        placeholder="Account holder name"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Order Date</label>
+                      <label htmlFor="order-date" className="text-sm font-medium">Order/Creation Date</label>
                       <Input
+                        id="order-date"
                         type="date"
                         value={accountForm.order_date}
-                        onChange={(e) => setAccountForm(prev => ({...prev, order_date: e.target.value}))}
+                        onChange={(e) => setAccountForm({...accountForm, order_date: e.target.value})}
                       />
                     </div>
-                    <div className="col-span-2">
-                      <label className="text-sm font-medium">Note</label>
+                    <div>
+                      <label htmlFor="note" className="text-sm font-medium">Notes</label>
                       <Textarea
+                        id="note"
                         value={accountForm.note}
-                        onChange={(e) => setAccountForm(prev => ({...prev, note: e.target.value}))}
-                        placeholder="Additional notes..."
+                        onChange={(e) => setAccountForm({...accountForm, note: e.target.value})}
+                        placeholder="Additional notes about this account..."
                         rows={3}
                       />
                     </div>
@@ -555,137 +602,144 @@ const Dashboard = () => {
                 </DialogContent>
               </Dialog>
             </div>
+
+            {/* Category Filter */}
+            {categories.length > 0 && (
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategory('all')}
+                >
+                  All ({accounts.length})
+                </Button>
+                {categories.map((category) => {
+                  const count = accounts.filter(account => account.category === category).length;
+                  return (
+                    <Button
+                      key={category}
+                      variant={selectedCategory === category ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedCategory(category)}
+                    >
+                      {category} ({count})
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Accounts Grid */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Loading State */}
+              {accountsLoading && (
+                <div className="col-span-full flex justify-center py-12">
+                  <div className="text-center space-y-4">
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-muted-foreground">Loading accounts...</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Empty State */}
+              {!accountsLoading && filteredAccounts.length === 0 && (
+                <div className="col-span-full text-center py-12">
+                  <div className="space-y-4">
+                    <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto" />
+                    <div>
+                      <h3 className="text-lg font-semibold">No accounts yet</h3>
+                      <p className="text-muted-foreground">Create your first digital account to start organizing your credentials</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Accounts */}
+              {!accountsLoading && filteredAccounts.map((account) => (
+                <Card key={account.id} className="p-6 hover:shadow-medium transition-shadow group relative">
+                  {/* Action Buttons */}
+                  <div className="absolute top-2 right-2 z-10 flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-primary hover:text-primary-foreground"
+                      onClick={() => handleEditAccount(account)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={() => deleteAccount(account.id)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="pr-10">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                          {account.product_name}
+                        </h3>
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                          {account.category}
+                        </span>
+                      </div>
+                      
+                      {account.customer_name && (
+                        <p className="text-sm text-muted-foreground">
+                          Customer: {account.customer_name}
+                        </p>
+                      )}
+                      
+                      {account.email && (
+                        <p className="text-sm text-muted-foreground">
+                          Email: {account.email}
+                        </p>
+                      )}
+                      
+                      {account.password && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>Password:</span>
+                          <span className="font-mono">
+                            {showPassword[account.id] ? account.password : '••••••••'}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => togglePasswordVisibility(account.id)}
+                          >
+                            {showPassword[account.id] ? (
+                              <EyeOff className="w-3 h-3" />
+                            ) : (
+                              <Eye className="w-3 h-3" />
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {account.note && (
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                          {account.note}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        {account.order_date ? new Date(account.order_date).toLocaleDateString() : formatDate(account.created_at)}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
           </div>
-
-          {/* Accounts Grid */}
-          <div className="grid gap-4">
-            {/* Loading State */}
-            {accountsLoading && (
-              <div className="flex justify-center py-12">
-                <div className="text-center space-y-4">
-                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                  <p className="text-muted-foreground">Loading accounts...</p>
-                </div>
-              </div>
-            )}
-
-            {/* Empty State */}
-            {!accountsLoading && filteredAccounts.length === 0 && (
-              <div className="text-center py-12">
-                <div className="space-y-4">
-                  <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto" />
-                  <div>
-                    <h3 className="text-lg font-semibold">No accounts yet</h3>
-                    <p className="text-muted-foreground">
-                      {selectedCategory === 'all' 
-                        ? 'Create your first account to start managing your digital products'
-                        : `No accounts found in "${selectedCategory}" category`
-                      }
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Security Notice */}
-            {!accountsLoading && filteredAccounts.length > 0 && (
-              <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                <div className="flex items-start space-x-2">
-                  <div className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5">
-                    🔒
-                  </div>
-                  <div className="text-sm">
-                    <p className="font-medium text-amber-800 dark:text-amber-200">Security Protected</p>
-                    <p className="text-amber-700 dark:text-amber-300">
-                      Your passwords and emails are encrypted using AES-256 encryption before being stored. 
-                      Only you can decrypt and view this sensitive information.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Accounts Table */}
-            {!accountsLoading && filteredAccounts.length > 0 && (
-              <Card className="overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-muted/50">
-                      <tr className="border-b">
-                        <th className="text-left p-4 font-medium">Product</th>
-                        <th className="text-left p-4 font-medium">Category</th>
-                        <th className="text-left p-4 font-medium">Email</th>
-                        <th className="text-left p-4 font-medium">Password</th>
-                        <th className="text-left p-4 font-medium">Customer</th>
-                        <th className="text-left p-4 font-medium">Order Date</th>
-                        <th className="text-left p-4 font-medium">Note</th>
-                        <th className="text-left p-4 font-medium">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredAccounts.map((account) => (
-                        <tr key={account.id} className="border-b hover:bg-muted/30 transition-colors">
-                          <td className="p-4 font-medium">{account.product_name}</td>
-                          <td className="p-4">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary">
-                              {account.category}
-                            </span>
-                          </td>
-                          <td className="p-4 text-sm">{account.email}</td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-mono">
-                                {showPassword[account.id] ? account.password : '••••••••'}
-                              </span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                onClick={() => togglePasswordVisibility(account.id)}
-                              >
-                                {showPassword[account.id] ? 
-                                  <EyeOff className="w-3 h-3" /> : 
-                                  <Eye className="w-3 h-3" />
-                                }
-                              </Button>
-                            </div>
-                          </td>
-                          <td className="p-4 text-sm">{account.customer_name || '-'}</td>
-                          <td className="p-4 text-sm">
-                            {account.order_date ? new Date(account.order_date).toLocaleDateString() : '-'}
-                          </td>
-                          <td className="p-4 text-sm max-w-32 truncate" title={account.note}>
-                            {account.note || '-'}
-                          </td>
-                          <td className="p-4">
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-primary hover:text-primary-foreground"
-                                onClick={() => handleEditAccount(account)}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                                onClick={() => deleteAccount(account.id)}
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
