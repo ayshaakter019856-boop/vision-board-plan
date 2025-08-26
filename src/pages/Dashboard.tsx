@@ -265,7 +265,7 @@ const Dashboard = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    handleHideDiagram(diagram.id);
+                    deleteDiagram(diagram.id);
                   }}
                 >
                   <X className="w-4 h-4" />
