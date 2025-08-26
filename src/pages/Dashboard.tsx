@@ -48,6 +48,7 @@ const Dashboard = () => {
   // Daily costing states
   const [isAddCostDialogOpen, setIsAddCostDialogOpen] = useState(false);
   const [editingCost, setEditingCost] = useState<any>(null);
+  const [selectedMonthFilter, setSelectedMonthFilter] = useState<string>(new Date().toLocaleString('default', { month: 'long' }));
   const [costFormData, setCostFormData] = useState({
     month_name: "",
     date: "",
@@ -240,9 +241,14 @@ const Dashboard = () => {
   const currentMonth = new Date().toLocaleString('default', { month: 'long' });
   const currentYear = new Date().getFullYear();
   
+  // Get month number from selected month name for filtering
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                     'July', 'August', 'September', 'October', 'November', 'December'];
+  const selectedMonthIndex = monthNames.indexOf(selectedMonthFilter);
+  
   const monthlyData = (costs || []).filter(cost => {
     const costDate = new Date(cost.date);
-    return costDate.getMonth() === new Date().getMonth() && 
+    return costDate.getMonth() === selectedMonthIndex && 
            costDate.getFullYear() === currentYear;
   });
 
@@ -994,6 +1000,35 @@ const Dashboard = () => {
                 </Dialog>
               </CardHeader>
               <CardContent>
+                {/* Monthly Filter */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-4">
+                    <label className="text-sm font-medium">Filter by Month:</label>
+                    <Select
+                      value={selectedMonthFilter}
+                      onValueChange={setSelectedMonthFilter}
+                    >
+                      <SelectTrigger className="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border border-border z-50">
+                        <SelectItem value="January">January</SelectItem>
+                        <SelectItem value="February">February</SelectItem>
+                        <SelectItem value="March">March</SelectItem>
+                        <SelectItem value="April">April</SelectItem>
+                        <SelectItem value="May">May</SelectItem>
+                        <SelectItem value="June">June</SelectItem>
+                        <SelectItem value="July">July</SelectItem>
+                        <SelectItem value="August">August</SelectItem>
+                        <SelectItem value="September">September</SelectItem>
+                        <SelectItem value="October">October</SelectItem>
+                        <SelectItem value="November">November</SelectItem>
+                        <SelectItem value="December">December</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <Card className="border-border/40">
@@ -1003,7 +1038,7 @@ const Dashboard = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-destructive">৳{totalMonthlyCosting.toFixed(2)}</div>
-                      <p className="text-xs text-muted-foreground">{currentMonth} {currentYear}</p>
+                      <p className="text-xs text-muted-foreground">{selectedMonthFilter} {currentYear}</p>
                     </CardContent>
                   </Card>
                   <Card className="border-border/40">
@@ -1013,7 +1048,7 @@ const Dashboard = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-primary">৳{totalMonthlyEarning.toFixed(2)}</div>
-                      <p className="text-xs text-muted-foreground">{currentMonth} {currentYear}</p>
+                      <p className="text-xs text-muted-foreground">{selectedMonthFilter} {currentYear}</p>
                     </CardContent>
                   </Card>
                   <Card className="border-border/40">
@@ -1025,7 +1060,7 @@ const Dashboard = () => {
                       <div className={`text-2xl font-bold ${netEarning >= 0 ? 'text-primary' : 'text-destructive'}`}>
                         ৳{netEarning.toFixed(2)}
                       </div>
-                      <p className="text-xs text-muted-foreground">{currentMonth} {currentYear}</p>
+                      <p className="text-xs text-muted-foreground">{selectedMonthFilter} {currentYear}</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -1050,14 +1085,14 @@ const Dashboard = () => {
                             Loading costs...
                           </TableCell>
                         </TableRow>
-                      ) : (costs || []).length === 0 ? (
+                      ) : monthlyData.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                            No costs found. Add your first cost entry.
+                            No costs found for {selectedMonthFilter} {currentYear}.
                           </TableCell>
                         </TableRow>
                       ) : (
-                        (costs || []).map((cost) => (
+                        monthlyData.map((cost) => (
                           <TableRow key={cost.id}>
                             <TableCell className="font-medium">{cost.month_name}</TableCell>
                             <TableCell>{new Date(cost.date).toLocaleDateString()}</TableCell>
