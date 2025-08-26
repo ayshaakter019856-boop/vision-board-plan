@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -80,6 +80,25 @@ const DiagramBuilder = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('sales');
   const [newNodeLabel, setNewNodeLabel] = useState('');
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+
+  // Handle keyboard delete
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        const selectedNodes = nodes.filter(node => node.selected);
+        if (selectedNodes.length > 0) {
+          const selectedNodeIds = selectedNodes.map(node => node.id);
+          setNodes((nds) => nds.filter(node => !selectedNodeIds.includes(node.id)));
+          setEdges((eds) => eds.filter(edge => 
+            !selectedNodeIds.includes(edge.source) && !selectedNodeIds.includes(edge.target)
+          ));
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [nodes, setNodes, setEdges]);
 
   const categories = [
     { id: 'sales', label: 'Sales', icon: DollarSign, color: 'sales' },

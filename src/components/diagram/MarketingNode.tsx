@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { Handle, Position, NodeProps } from '@xyflow/react';
+import { Handle, Position, NodeProps, useReactFlow } from '@xyflow/react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,8 @@ import {
   Target, 
   Users, 
   BarChart3,
-  StickyNote
+  StickyNote,
+  Trash2
 } from "lucide-react";
 
 interface MarketingNodeData {
@@ -39,6 +40,7 @@ export const MarketingNode = memo(({ data, id, selected }: NodeProps) => {
   const [editData, setEditData] = useState(nodeData);
   const config = categoryConfig[nodeData.category];
   const Icon = config.icon;
+  const { setNodes, setEdges } = useReactFlow();
 
   const handleSave = () => {
     // In a real app, this would update the node data
@@ -49,6 +51,11 @@ export const MarketingNode = memo(({ data, id, selected }: NodeProps) => {
   const handleCancel = () => {
     setEditData(nodeData);
     setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    setNodes((nodes) => nodes.filter((node) => node.id !== id));
+    setEdges((edges) => edges.filter((edge) => edge.source !== id && edge.target !== id));
   };
 
   return (
@@ -91,6 +98,15 @@ export const MarketingNode = memo(({ data, id, selected }: NodeProps) => {
               onClick={() => setIsEditing(!isEditing)}
             >
               <Edit3 className="w-3 h-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10"
+              onClick={handleDelete}
+              title="Delete node"
+            >
+              <Trash2 className="w-3 h-3" />
             </Button>
           </div>
         </div>
