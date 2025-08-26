@@ -1,24 +1,26 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy } from "lucide-react";
+import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy, DollarSign, TrendingUp, TrendingDown, Eye, EyeOff, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDiagrams } from "@/hooks/useDiagrams";
 import { useNotes } from "@/hooks/useNotes";
 import { useAccounts } from "@/hooks/useAccounts";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useCosts } from "@/hooks/useCosts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Eye, EyeOff, ShoppingBag } from "lucide-react";
-import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { diagrams, loading, deleteDiagram } = useDiagrams();
   const { notes, loading: notesLoading, saveNote, deleteNote } = useNotes();
   const { accounts, loading: accountsLoading, createAccount, updateAccount, deleteAccount } = useAccounts();
+  const { costs, loading: costsLoading, saveCost, deleteCost } = useCosts();
   const [searchTerm, setSearchTerm] = useState('');
   const [hiddenDiagrams, setHiddenDiagrams] = useState<Set<string>>(new Set());
   
@@ -43,8 +45,19 @@ const Dashboard = () => {
   const [showPassword, setShowPassword] = useState<{[key: string]: boolean}>({});
   const [selectedCategory, setSelectedCategory] = useState('all');
   
+  // Daily costing states
+  const [isAddCostDialogOpen, setIsAddCostDialogOpen] = useState(false);
+  const [editingCost, setEditingCost] = useState<any>(null);
+  const [costFormData, setCostFormData] = useState({
+    month_name: "",
+    date: "",
+    costing_reason: "",
+    costing_amount: "",
+    is_earning: false
+  });
+  
   // Section visibility state
-  const [activeSection, setActiveSection] = useState<'diagrams' | 'notes' | 'accounts' | null>(null);
+  const [activeSection, setActiveSection] = useState<'diagrams' | 'notes' | 'accounts' | 'costs' | null>(null);
 
   const filteredDiagrams = diagrams.filter(diagram =>
     diagram.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -169,6 +182,80 @@ const Dashboard = () => {
     }
   };
 
+  // Daily costing functions
+  const handleAddCost = () => {
+    setCostFormData({
+      month_name: "",
+      date: "",
+      costing_reason: "",
+      costing_amount: "",
+      is_earning: false
+    });
+    setEditingCost(null);
+    setIsAddCostDialogOpen(true);
+  };
+
+  const handleEditCost = (cost: any) => {
+    setCostFormData({
+      month_name: cost.month_name,
+      date: cost.date,
+      costing_reason: cost.costing_reason,
+      costing_amount: cost.costing_amount.toString(),
+      is_earning: cost.is_earning
+    });
+    setEditingCost(cost);
+    setIsAddCostDialogOpen(true);
+  };
+
+  const handleCostSubmit = async () => {
+    if (!costFormData.month_name || !costFormData.date || !costFormData.costing_reason || !costFormData.costing_amount) {
+      return;
+    }
+
+    await saveCost(
+      costFormData.month_name,
+      costFormData.date,
+      costFormData.costing_reason,
+      parseFloat(costFormData.costing_amount),
+      costFormData.is_earning,
+      editingCost?.id
+    );
+
+    setIsAddCostDialogOpen(false);
+    setCostFormData({
+      month_name: "",
+      date: "",
+      costing_reason: "",
+      costing_amount: "",
+      is_earning: false
+    });
+    setEditingCost(null);
+  };
+
+  const handleDeleteCost = async (costId: string) => {
+    await deleteCost(costId);
+  };
+
+  // Calculate cost totals
+  const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+  const currentYear = new Date().getFullYear();
+  
+  const monthlyData = costs.filter(cost => {
+    const costDate = new Date(cost.date);
+    return costDate.getMonth() === new Date().getMonth() && 
+           costDate.getFullYear() === currentYear;
+  });
+
+  const totalMonthlyCosting = monthlyData
+    .filter(cost => !cost.is_earning)
+    .reduce((sum, cost) => sum + parseFloat(cost.costing_amount.toString()), 0);
+    
+  const totalMonthlyEarning = monthlyData
+    .filter(cost => cost.is_earning)
+    .reduce((sum, cost) => sum + parseFloat(cost.costing_amount.toString()), 0);
+    
+  const netEarning = totalMonthlyEarning - totalMonthlyCosting;
+
   // Get unique categories
   const categories = Array.from(new Set(accounts.map(account => account.category))).filter(Boolean);
   
@@ -208,7 +295,7 @@ const Dashboard = () => {
         </div>
 
         {/* Section Navigation */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card 
             className={`p-6 cursor-pointer transition-all hover:shadow-medium group ${
               activeSection === 'diagrams' ? 'ring-2 ring-primary bg-primary/5' : ''
@@ -256,6 +343,23 @@ const Dashboard = () => {
               <div>
                 <h3 className="font-semibold text-lg">Digital Accounts</h3>
                 <p className="text-sm text-muted-foreground">{accounts.length} accounts</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card 
+            className={`p-6 cursor-pointer transition-all hover:shadow-medium group ${
+              activeSection === 'costs' ? 'ring-2 ring-primary bg-primary/5' : ''
+            }`}
+            onClick={() => setActiveSection(activeSection === 'costs' ? null : 'costs')}
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+                <DollarSign className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">Daily Costing</h3>
+                <p className="text-sm text-muted-foreground">{costs.length} entries</p>
               </div>
             </div>
           </Card>
@@ -766,6 +870,219 @@ const Dashboard = () => {
                 </Card>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Daily Costing Section */}
+        {activeSection === 'costs' && (
+          <div className="mb-8">
+            <Card className="border-border/40 bg-card/30 backdrop-blur">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-primary" />
+                    Daily Costing
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Track your daily expenses and earnings
+                  </CardDescription>
+                </div>
+                <Dialog open={isAddCostDialogOpen} onOpenChange={setIsAddCostDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button onClick={handleAddCost} className="bg-primary hover:bg-primary/90">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Cost
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>{editingCost ? "Edit Cost" : "Add New Cost"}</DialogTitle>
+                      <DialogDescription>
+                        {editingCost ? "Update the cost details." : "Add a new daily cost or earning entry."}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <label htmlFor="month_name" className="text-right">
+                          Month
+                        </label>
+                        <Input
+                          id="month_name"
+                          value={costFormData.month_name}
+                          onChange={(e) => setCostFormData({ ...costFormData, month_name: e.target.value })}
+                          className="col-span-3"
+                          placeholder="January"
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <label htmlFor="date" className="text-right">
+                          Date
+                        </label>
+                        <Input
+                          id="date"
+                          type="date"
+                          value={costFormData.date}
+                          onChange={(e) => setCostFormData({ ...costFormData, date: e.target.value })}
+                          className="col-span-3"
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <label htmlFor="costing_reason" className="text-right">
+                          Reason
+                        </label>
+                        <Input
+                          id="costing_reason"
+                          value={costFormData.costing_reason}
+                          onChange={(e) => setCostFormData({ ...costFormData, costing_reason: e.target.value })}
+                          className="col-span-3"
+                          placeholder="Grocery shopping"
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <label htmlFor="costing_amount" className="text-right">
+                          Amount
+                        </label>
+                        <Input
+                          id="costing_amount"
+                          type="number"
+                          step="0.01"
+                          value={costFormData.costing_amount}
+                          onChange={(e) => setCostFormData({ ...costFormData, costing_amount: e.target.value })}
+                          className="col-span-3"
+                          placeholder="100.00"
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <label htmlFor="is_earning" className="text-right">
+                          Type
+                        </label>
+                        <Select
+                          value={costFormData.is_earning ? "earning" : "cost"}
+                          onValueChange={(value) => setCostFormData({ ...costFormData, is_earning: value === "earning" })}
+                        >
+                          <SelectTrigger className="col-span-3">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cost">Cost</SelectItem>
+                            <SelectItem value="earning">Earning</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={handleCostSubmit} className="bg-primary hover:bg-primary/90">
+                        {editingCost ? "Update Cost" : "Add Cost"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <Card className="border-border/40">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Monthly Costing</CardTitle>
+                      <TrendingDown className="h-4 w-4 text-destructive" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-destructive">${totalMonthlyCosting.toFixed(2)}</div>
+                      <p className="text-xs text-muted-foreground">{currentMonth} {currentYear}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-border/40">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Monthly Earning</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-primary">${totalMonthlyEarning.toFixed(2)}</div>
+                      <p className="text-xs text-muted-foreground">{currentMonth} {currentYear}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-border/40">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Net Earning</CardTitle>
+                      <DollarSign className="h-4 w-4 text-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className={`text-2xl font-bold ${netEarning >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                        ${netEarning.toFixed(2)}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{currentMonth} {currentYear}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Costs Table */}
+                <div className="border border-border/40 rounded-md bg-card/50">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Month Name</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Costing Reason</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Costing Amount</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {costsLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                            Loading costs...
+                          </TableCell>
+                        </TableRow>
+                      ) : costs.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                            No costs found. Add your first cost entry.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        costs.map((cost) => (
+                          <TableRow key={cost.id}>
+                            <TableCell className="font-medium">{cost.month_name}</TableCell>
+                            <TableCell>{new Date(cost.date).toLocaleDateString()}</TableCell>
+                            <TableCell>{cost.costing_reason}</TableCell>
+                            <TableCell>
+                              <Badge variant={cost.is_earning ? "default" : "destructive"}>
+                                {cost.is_earning ? "Earning" : "Cost"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className={cost.is_earning ? "text-primary font-medium" : "text-destructive font-medium"}>
+                              ${parseFloat(cost.costing_amount.toString()).toFixed(2)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex gap-1 justify-end">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-primary hover:text-primary-foreground"
+                                  onClick={() => handleEditCost(cost)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                                  onClick={() => handleDeleteCost(cost.id)}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

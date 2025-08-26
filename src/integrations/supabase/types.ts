@@ -56,6 +56,42 @@ export type Database = {
         }
         Relationships: []
       }
+      costs: {
+        Row: {
+          costing_amount: number
+          costing_reason: string
+          created_at: string
+          date: string
+          id: string
+          is_earning: boolean
+          month_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          costing_amount: number
+          costing_reason: string
+          created_at?: string
+          date: string
+          id?: string
+          is_earning?: boolean
+          month_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          costing_amount?: number
+          costing_reason?: string
+          created_at?: string
+          date?: string
+          id?: string
+          is_earning?: boolean
+          month_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       diagrams: {
         Row: {
           created_at: string
