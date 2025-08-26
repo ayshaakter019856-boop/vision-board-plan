@@ -8,18 +8,39 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDiagrams } from "@/hooks/useDiagrams";
 import { useNotes } from "@/hooks/useNotes";
+import { useAccounts } from "@/hooks/useAccounts";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Eye, EyeOff, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { diagrams, loading, deleteDiagram } = useDiagrams();
   const { notes, loading: notesLoading, saveNote, deleteNote } = useNotes();
+  const { accounts, loading: accountsLoading, createAccount, updateAccount, deleteAccount } = useAccounts();
   const [searchTerm, setSearchTerm] = useState('');
   const [hiddenDiagrams, setHiddenDiagrams] = useState<Set<string>>(new Set());
+  
+  // Notes state
   const [noteTitle, setNoteTitle] = useState('');
   const [noteContent, setNoteContent] = useState('');
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
+  
+  // Accounts state
+  const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<string | null>(null);
+  const [accountForm, setAccountForm] = useState({
+    product_name: '',
+    email: '',
+    password: '',
+    note: '',
+    customer_name: '',
+    order_date: '',
+    category: ''
+  });
+  const [showPassword, setShowPassword] = useState<{[key: string]: boolean}>({});
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
   const filteredDiagrams = diagrams.filter(diagram =>
     diagram.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -74,6 +95,68 @@ const Dashboard = () => {
     setEditingNote(null);
     setIsNoteDialogOpen(true);
   };
+
+  // Account handlers
+  const resetAccountForm = () => {
+    setAccountForm({
+      product_name: '',
+      email: '',
+      password: '',
+      note: '',
+      customer_name: '',
+      order_date: '',
+      category: ''
+    });
+  };
+
+  const handleNewAccount = () => {
+    resetAccountForm();
+    setEditingAccount(null);
+    setIsAccountDialogOpen(true);
+  };
+
+  const handleEditAccount = (account: any) => {
+    setAccountForm({
+      product_name: account.product_name,
+      email: account.email,
+      password: account.password,
+      note: account.note || '',
+      customer_name: account.customer_name || '',
+      order_date: account.order_date || '',
+      category: account.category
+    });
+    setEditingAccount(account.id);
+    setIsAccountDialogOpen(true);
+  };
+
+  const handleSaveAccount = async () => {
+    if (!accountForm.product_name.trim() || !accountForm.category.trim()) return;
+    
+    if (editingAccount) {
+      await updateAccount(editingAccount, accountForm);
+    } else {
+      await createAccount(accountForm);
+    }
+    
+    resetAccountForm();
+    setEditingAccount(null);
+    setIsAccountDialogOpen(false);
+  };
+
+  const togglePasswordVisibility = (accountId: string) => {
+    setShowPassword(prev => ({
+      ...prev,
+      [accountId]: !prev[accountId]
+    }));
+  };
+
+  // Get unique categories
+  const categories = Array.from(new Set(accounts.map(account => account.category))).filter(Boolean);
+  
+  // Filter accounts by category
+  const filteredAccounts = selectedCategory === 'all' 
+    ? accounts 
+    : accounts.filter(account => account.category === selectedCategory);
 
   return (
     <div className="min-h-screen bg-background">
@@ -364,6 +447,225 @@ const Dashboard = () => {
                 </div>
               </Card>
             ))}
+          </div>
+        </div>
+
+        {/* Accounts Section */}
+        <div className="mt-16">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Digital Product Accounts</h2>
+              <p className="text-muted-foreground">Manage your digital product customer accounts</p>
+            </div>
+            <div className="flex gap-4">
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map(category => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Dialog open={isAccountDialogOpen} onOpenChange={setIsAccountDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="lg" onClick={handleNewAccount}>
+                    <Plus className="w-5 h-5 mr-2" />
+                    New Account
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>{editingAccount ? 'Edit Account' : 'Create New Account'}</DialogTitle>
+                    <DialogDescription>
+                      {editingAccount ? 'Update account information' : 'Add a new digital product account'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Product Name *</label>
+                      <Input
+                        value={accountForm.product_name}
+                        onChange={(e) => setAccountForm(prev => ({...prev, product_name: e.target.value}))}
+                        placeholder="Enter product name..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Category *</label>
+                      <Input
+                        value={accountForm.category}
+                        onChange={(e) => setAccountForm(prev => ({...prev, category: e.target.value}))}
+                        placeholder="Enter category..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Email</label>
+                      <Input
+                        type="email"
+                        value={accountForm.email}
+                        onChange={(e) => setAccountForm(prev => ({...prev, email: e.target.value}))}
+                        placeholder="Enter email..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Password</label>
+                      <Input
+                        type="password"
+                        value={accountForm.password}
+                        onChange={(e) => setAccountForm(prev => ({...prev, password: e.target.value}))}
+                        placeholder="Enter password..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Customer Name</label>
+                      <Input
+                        value={accountForm.customer_name}
+                        onChange={(e) => setAccountForm(prev => ({...prev, customer_name: e.target.value}))}
+                        placeholder="Enter customer name..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Order Date</label>
+                      <Input
+                        type="date"
+                        value={accountForm.order_date}
+                        onChange={(e) => setAccountForm(prev => ({...prev, order_date: e.target.value}))}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-sm font-medium">Note</label>
+                      <Textarea
+                        value={accountForm.note}
+                        onChange={(e) => setAccountForm(prev => ({...prev, note: e.target.value}))}
+                        placeholder="Additional notes..."
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsAccountDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleSaveAccount}>
+                      {editingAccount ? 'Update Account' : 'Save Account'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          {/* Accounts Grid */}
+          <div className="grid gap-4">
+            {/* Loading State */}
+            {accountsLoading && (
+              <div className="flex justify-center py-12">
+                <div className="text-center space-y-4">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <p className="text-muted-foreground">Loading accounts...</p>
+                </div>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!accountsLoading && filteredAccounts.length === 0 && (
+              <div className="text-center py-12">
+                <div className="space-y-4">
+                  <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto" />
+                  <div>
+                    <h3 className="text-lg font-semibold">No accounts yet</h3>
+                    <p className="text-muted-foreground">
+                      {selectedCategory === 'all' 
+                        ? 'Create your first account to start managing your digital products'
+                        : `No accounts found in "${selectedCategory}" category`
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Accounts Table */}
+            {!accountsLoading && filteredAccounts.length > 0 && (
+              <Card className="overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-muted/50">
+                      <tr className="border-b">
+                        <th className="text-left p-4 font-medium">Product</th>
+                        <th className="text-left p-4 font-medium">Category</th>
+                        <th className="text-left p-4 font-medium">Email</th>
+                        <th className="text-left p-4 font-medium">Password</th>
+                        <th className="text-left p-4 font-medium">Customer</th>
+                        <th className="text-left p-4 font-medium">Order Date</th>
+                        <th className="text-left p-4 font-medium">Note</th>
+                        <th className="text-left p-4 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredAccounts.map((account) => (
+                        <tr key={account.id} className="border-b hover:bg-muted/30 transition-colors">
+                          <td className="p-4 font-medium">{account.product_name}</td>
+                          <td className="p-4">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary">
+                              {account.category}
+                            </span>
+                          </td>
+                          <td className="p-4 text-sm">{account.email}</td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-mono">
+                                {showPassword[account.id] ? account.password : '••••••••'}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={() => togglePasswordVisibility(account.id)}
+                              >
+                                {showPassword[account.id] ? 
+                                  <EyeOff className="w-3 h-3" /> : 
+                                  <Eye className="w-3 h-3" />
+                                }
+                              </Button>
+                            </div>
+                          </td>
+                          <td className="p-4 text-sm">{account.customer_name || '-'}</td>
+                          <td className="p-4 text-sm">
+                            {account.order_date ? new Date(account.order_date).toLocaleDateString() : '-'}
+                          </td>
+                          <td className="p-4 text-sm max-w-32 truncate" title={account.note}>
+                            {account.note || '-'}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-primary hover:text-primary-foreground"
+                                onClick={() => handleEditAccount(account)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                                onClick={() => deleteAccount(account.id)}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
           </div>
         </div>
       </div>

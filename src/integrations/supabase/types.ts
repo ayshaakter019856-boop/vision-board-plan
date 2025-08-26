@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          category: string
+          created_at: string
+          customer_name: string | null
+          email: string
+          id: string
+          note: string | null
+          order_date: string | null
+          password: string
+          product_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          customer_name?: string | null
+          email: string
+          id?: string
+          note?: string | null
+          order_date?: string | null
+          password: string
+          product_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          customer_name?: string | null
+          email?: string
+          id?: string
+          note?: string | null
+          order_date?: string | null
+          password?: string
+          product_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       diagrams: {
         Row: {
           created_at: string
