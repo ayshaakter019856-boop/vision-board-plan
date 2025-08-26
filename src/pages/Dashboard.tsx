@@ -1,18 +1,25 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Search, FolderOpen, Calendar, X, User } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDiagrams } from "@/hooks/useDiagrams";
+import { useNotes } from "@/hooks/useNotes";
 import { useState } from "react";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { diagrams, loading, deleteDiagram } = useDiagrams();
+  const { notes, loading: notesLoading, saveNote, deleteNote } = useNotes();
   const [searchTerm, setSearchTerm] = useState('');
   const [hiddenDiagrams, setHiddenDiagrams] = useState<Set<string>>(new Set());
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteContent, setNoteContent] = useState('');
+  const [editingNote, setEditingNote] = useState<string | null>(null);
+  const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
 
   const filteredDiagrams = diagrams.filter(diagram =>
     diagram.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -42,6 +49,30 @@ const Dashboard = () => {
 
   const handleHideDiagram = (id: string) => {
     setHiddenDiagrams(prev => new Set([...prev, id]));
+  };
+
+  const handleSaveNote = async () => {
+    if (!noteTitle.trim()) return;
+    
+    await saveNote(noteTitle, noteContent, editingNote || undefined);
+    setNoteTitle('');
+    setNoteContent('');
+    setEditingNote(null);
+    setIsNoteDialogOpen(false);
+  };
+
+  const handleEditNote = (note: any) => {
+    setNoteTitle(note.title);
+    setNoteContent(note.content || '');
+    setEditingNote(note.id);
+    setIsNoteDialogOpen(true);
+  };
+
+  const handleNewNote = () => {
+    setNoteTitle('');
+    setNoteContent('');
+    setEditingNote(null);
+    setIsNoteDialogOpen(true);
   };
 
   return (
@@ -216,6 +247,123 @@ const Dashboard = () => {
                 <span>Ad Campaign</span>
               </Button>
             </div>
+          </div>
+        </div>
+
+        {/* Notes Section */}
+        <div className="mt-16">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">My Notes</h2>
+              <p className="text-muted-foreground">Keep track of your marketing plans and ideas</p>
+            </div>
+            <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="lg" onClick={handleNewNote}>
+                  <Plus className="w-5 h-5 mr-2" />
+                  New Note
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editingNote ? 'Edit Note' : 'Create New Note'}</DialogTitle>
+                  <DialogDescription>
+                    {editingNote ? 'Update your note' : 'Add a new note to keep track of your marketing plans'}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="note-title" className="text-sm font-medium">Title</label>
+                    <Input
+                      id="note-title"
+                      value={noteTitle}
+                      onChange={(e) => setNoteTitle(e.target.value)}
+                      placeholder="Enter note title..."
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="note-content" className="text-sm font-medium">Content</label>
+                    <Textarea
+                      id="note-content"
+                      value={noteContent}
+                      onChange={(e) => setNoteContent(e.target.value)}
+                      placeholder="Write your note content here..."
+                      rows={6}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsNoteDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveNote}>
+                    {editingNote ? 'Update Note' : 'Save Note'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Notes Grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Loading State */}
+            {notesLoading && (
+              <div className="col-span-full flex justify-center py-12">
+                <div className="text-center space-y-4">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <p className="text-muted-foreground">Loading notes...</p>
+                </div>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!notesLoading && notes.length === 0 && (
+              <div className="col-span-full text-center py-12">
+                <div className="space-y-4">
+                  <StickyNote className="w-16 h-16 text-muted-foreground mx-auto" />
+                  <div>
+                    <h3 className="text-lg font-semibold">No notes yet</h3>
+                    <p className="text-muted-foreground">Create your first note to start organizing your ideas</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Notes */}
+            {!notesLoading && notes.map((note) => (
+              <Card key={note.id} className="p-6 hover:shadow-medium transition-shadow group relative">
+                {/* Edit Button */}
+                <div className="absolute top-2 right-2 z-10 flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-primary hover:text-primary-foreground"
+                    onClick={() => handleEditNote(note)}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                    onClick={() => deleteNote(note.id)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <div className="space-y-4 pr-16">
+                  <h3 className="font-semibold text-lg line-clamp-2">{note.title}</h3>
+                  {note.content && (
+                    <p className="text-sm text-muted-foreground line-clamp-4">{note.content}</p>
+                  )}
+                  <div className="flex items-center text-xs text-muted-foreground pt-2 border-t border-border">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    {formatDate(note.updated_at)}
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
       </div>
