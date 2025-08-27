@@ -18,7 +18,7 @@ interface CSVAccount {
   category: string;
   note?: string;
   customer_name?: string;
-  order_date?: string;
+  expired_date?: string;
 }
 
 export const CSVUpload: React.FC<CSVUploadProps> = ({ onUpload }) => {
@@ -30,7 +30,7 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ onUpload }) => {
   const [previewData, setPreviewData] = useState<CSVAccount[]>([]);
 
   const expectedColumns = ['product_name', 'email', 'password', 'category'];
-  const optionalColumns = ['note', 'customer_name', 'order_date'];
+  const optionalColumns = ['note', 'customer_name', 'expired_date'];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -103,7 +103,7 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ onUpload }) => {
             category: row.category?.trim() || '',
             note: row.note?.trim() || '',
             customer_name: row.customer_name?.trim() || '',
-            order_date: row.order_date?.trim() || ''
+            order_date: row.expired_date?.trim() || ''
           })).filter(row => row.product_name && row.email && row.password && row.category);
 
           try {
@@ -131,9 +131,9 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ onUpload }) => {
 
   const downloadTemplate = () => {
     const template = [
-      ['product_name', 'email', 'password', 'category', 'note', 'customer_name', 'order_date'],
-      ['Netflix', 'user@example.com', 'password123', 'Streaming', 'Premium account', 'John Doe', '2024-01-15'],
-      ['Spotify', 'user2@example.com', 'mypassword', 'Music', 'Family plan', 'Jane Smith', '2024-01-20']
+      ['product_name', 'email', 'password', 'category', 'note', 'customer_name', 'expired_date'],
+      ['Netflix', 'user@example.com', 'password123', 'Streaming', 'Premium account', 'John Doe', '2024-12-31'],
+      ['Spotify', 'user2@example.com', 'mypassword', 'Music', 'Family plan', 'Jane Smith', '2024-11-15']
     ];
     
     const csv = Papa.unparse(template);
