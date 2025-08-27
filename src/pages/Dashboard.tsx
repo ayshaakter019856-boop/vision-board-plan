@@ -321,6 +321,23 @@ const Dashboard = () => {
     }
   };
 
+  // Function to move account back to active folder (solved)
+  const moveToActive = async (accountId: string) => {
+    try {
+      await updateAccount(accountId, { status: 'active' });
+      toast({
+        title: "Success",
+        description: "Account moved back to Active folder",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to move account to active folder",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -929,6 +946,17 @@ const Dashboard = () => {
                                     <AlertTriangle className="w-4 h-4" />
                                   </Button>
                                 </>
+                              )}
+                              {(selectedFolder === 'expired' || selectedFolder === 'problem') && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => moveToActive(account.id)}
+                                  className="text-green-600 hover:text-green-700"
+                                  title="Mark as solved - Move back to Active"
+                                >
+                                  <Check className="w-4 h-4" />
+                                </Button>
                               )}
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
