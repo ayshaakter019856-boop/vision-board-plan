@@ -33,6 +33,8 @@ const Dashboard = () => {
   const [noteContent, setNoteContent] = useState('');
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
+  const [completedNotes, setCompletedNotes] = useState<any[]>([]);
   
   // Accounts state
   const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
@@ -116,6 +118,13 @@ const Dashboard = () => {
     setNoteContent('');
     setEditingNote(null);
     setIsNoteDialogOpen(true);
+  };
+
+  const handleCompleteNote = (note: any) => {
+    // Move note to completed folder
+    setCompletedNotes(prev => [note, ...prev]);
+    // Remove from pending notes (this will be handled by the completeNote function)
+    completeNote(note.id);
   };
 
   // Account handlers
@@ -514,9 +523,9 @@ const Dashboard = () => {
                 <p className="text-muted-foreground">Keep track of your thoughts and ideas</p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="lg">
+                <Button variant="outline" size="lg" onClick={() => setShowCompleted(!showCompleted)}>
                   <Folder className="w-5 h-5 mr-2" />
-                  Completed
+                  {showCompleted ? 'Pending' : 'Completed'}
                 </Button>
                 <Button onClick={handleNewNote} size="lg">
                   <Plus className="w-5 h-5 mr-2" />
@@ -527,7 +536,7 @@ const Dashboard = () => {
 
             {/* Notes Grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {notesLoading && (
+              {(showCompleted ? false : notesLoading) && (
                 <div className="col-span-full flex justify-center py-12">
                   <div className="text-center space-y-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
@@ -536,7 +545,7 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {!notesLoading && notes.map((note) => (
+              {!notesLoading && !showCompleted && notes.map((note) => (
                 <Card key={note.id} className="p-6 hover:shadow-medium transition-all group">
                   <div className="space-y-4">
                     <div>
@@ -562,7 +571,7 @@ const Dashboard = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => completeNote(note.id)}
+                        onClick={() => handleCompleteNote(note)}
                         className="text-green-600 hover:text-green-700"
                         title="Mark as completed"
                       >
@@ -581,7 +590,27 @@ const Dashboard = () => {
                 </Card>
               ))}
 
-              {!notesLoading && notes.length === 0 && (
+              {/* Completed Notes */}
+              {!notesLoading && showCompleted && completedNotes.map((note) => (
+                <Card key={note.id} className="p-6 hover:shadow-medium transition-all group border-green-200">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-lg">{note.title}</h3>
+                        <Check className="w-5 h-5 text-green-600" />
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-3">
+                        {note.content || 'No content'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Completed: {formatDate(note.updated_at)}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+
+              {!notesLoading && !showCompleted && notes.length === 0 && (
                 <div className="col-span-full text-center py-12">
                   <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center mx-auto mb-4">
                     <StickyNote className="w-8 h-8 text-muted-foreground" />
@@ -592,6 +621,16 @@ const Dashboard = () => {
                     <Plus className="w-4 h-4 mr-2" />
                     Create Note
                   </Button>
+                </div>
+              )}
+
+              {!notesLoading && showCompleted && completedNotes.length === 0 && (
+                <div className="col-span-full text-center py-12">
+                  <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <Folder className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-semibold text-lg mb-2">No completed notes</h3>
+                  <p className="text-muted-foreground">Completed notes will appear here</p>
                 </div>
               )}
             </div>
