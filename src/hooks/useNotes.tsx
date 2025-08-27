@@ -7,6 +7,7 @@ export interface Note {
   id: string;
   title: string;
   content?: string | null;
+  completed?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -85,6 +86,27 @@ export const useNotes = () => {
     }
   };
 
+  const completeNote = async (id: string) => {
+    if (!user) return;
+
+    try {
+      // For now, we'll just delete the note when completed
+      // In the future, this can be updated to mark as completed when the DB schema supports it
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setNotes(prev => prev.filter(n => n.id !== id));
+      toast.success('Note completed!');
+    } catch (error) {
+      console.error('Error completing note:', error);
+      toast.error('Failed to complete note');
+    }
+  };
+
   const deleteNote = async (id: string) => {
     if (!user) return;
 
@@ -112,6 +134,7 @@ export const useNotes = () => {
     notes,
     loading,
     saveNote,
+    completeNote,
     deleteNote,
     refetch: fetchNotes,
   };

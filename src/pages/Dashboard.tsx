@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy, DollarSign, TrendingUp, TrendingDown, Eye, EyeOff } from "lucide-react";
+import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy, DollarSign, TrendingUp, TrendingDown, Eye, EyeOff, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDiagrams } from "@/hooks/useDiagrams";
@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { diagrams, loading, deleteDiagram } = useDiagrams();
-  const { notes, loading: notesLoading, saveNote, deleteNote } = useNotes();
+  const { notes, loading: notesLoading, saveNote, completeNote, deleteNote } = useNotes();
   const { accounts, loading: accountsLoading, createAccount, updateAccount, deleteAccount } = useAccounts();
   const { costs, loading: costsLoading, saveCost, deleteCost } = useCosts();
   const { profile } = useProfile();
@@ -552,6 +552,15 @@ const Dashboard = () => {
                       >
                         <Edit className="w-4 h-4 mr-2" />
                         Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => completeNote(note.id)}
+                        className="text-green-600 hover:text-green-700"
+                        title="Mark as completed"
+                      >
+                        <Check className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="outline"
