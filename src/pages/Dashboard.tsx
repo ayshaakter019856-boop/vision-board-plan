@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy, DollarSign, TrendingUp, TrendingDown, Eye, EyeOff, Check, Folder } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -50,6 +51,7 @@ const Dashboard = () => {
   });
   const [showPassword, setShowPassword] = useState<{[key: string]: boolean}>({});
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [accountToDelete, setAccountToDelete] = useState<{id: string, name: string} | null>(null);
   
   // Daily costing states
   const [isAddCostDialogOpen, setIsAddCostDialogOpen] = useState(false);
@@ -833,14 +835,34 @@ const Dashboard = () => {
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => deleteAccount(account.id)}
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Account</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete the account for "{account.product_name}"? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>No, Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => deleteAccount(account.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Yes, Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             </div>
                           </TableCell>
                         </TableRow>
