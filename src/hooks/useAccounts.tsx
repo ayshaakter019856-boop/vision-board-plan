@@ -142,12 +142,50 @@ export const useAccounts = () => {
     fetchAccounts();
   }, [user]);
 
+  const bulkCreateAccounts = async (accountsData: Omit<Account, 'id' | 'created_at' | 'updated_at'>[]) => {
+    if (!user) return;
+
+    try {
+      // Encrypt sensitive data for all accounts
+      const encryptedAccounts = await Promise.all(
+        accountsData.map(async (accountData) => ({
+          ...accountData,
+          password: await encryptionService.encrypt(accountData.password),
+          email: await encryptionService.encrypt(accountData.email),
+          user_id: user.id
+        }))
+      );
+
+      const { data, error } = await supabase
+        .from('accounts')
+        .insert(encryptedAccounts)
+        .select();
+
+      if (error) throw error;
+      
+      // Store decrypted versions in state for display
+      const decryptedAccounts = data.map((account, index) => ({
+        ...account,
+        password: accountsData[index].password,
+        email: accountsData[index].email
+      }));
+      
+      setAccounts(prev => [...decryptedAccounts, ...prev]);
+      toast.success(`Successfully imported ${decryptedAccounts.length} accounts`);
+    } catch (error) {
+      console.error('Error bulk creating accounts:', error);
+      toast.error('Failed to import accounts');
+      throw error;
+    }
+  };
+
   return {
     accounts,
     loading,
     createAccount,
     updateAccount,
     deleteAccount,
+    bulkCreateAccounts,
     refetch: fetchAccounts
   };
 };

@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDiagrams } from "@/hooks/useDiagrams";
 import { useNotes } from "@/hooks/useNotes";
 import { useAccounts } from "@/hooks/useAccounts";
+import { CSVUpload } from "@/components/CSVUpload";
 import { useCosts } from "@/hooks/useCosts";
 import { useProfile } from "@/hooks/useProfile";
 import { useRoles } from "@/hooks/useRoles";
@@ -21,7 +22,7 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { diagrams, loading, deleteDiagram } = useDiagrams();
   const { notes, loading: notesLoading, saveNote, completeNote, deleteNote, fetchNotes } = useNotes();
-  const { accounts, loading: accountsLoading, createAccount, updateAccount, deleteAccount } = useAccounts();
+  const { accounts, loading: accountsLoading, createAccount, updateAccount, deleteAccount, bulkCreateAccounts } = useAccounts();
   const { costs, loading: costsLoading, saveCost, deleteCost } = useCosts();
   const { profile } = useProfile();
   const { isAdmin } = useRoles();
@@ -672,10 +673,13 @@ const Dashboard = () => {
                 <h2 className="text-2xl font-bold mb-2">Digital Accounts</h2>
                 <p className="text-muted-foreground">Manage your digital service accounts and credentials</p>
               </div>
-              <Button onClick={handleNewAccount} size="lg">
-                <Plus className="w-5 h-5 mr-2" />
-                New Account
-              </Button>
+              <div className="flex gap-3">
+                <CSVUpload onUpload={bulkCreateAccounts} />
+                <Button onClick={handleNewAccount} size="lg">
+                  <Plus className="w-5 h-5 mr-2" />
+                  New Account
+                </Button>
+              </div>
             </div>
 
             {/* Category Filter */}
