@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy, DollarSign, TrendingUp, TrendingDown, Eye, EyeOff, Check } from "lucide-react";
+import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy, DollarSign, TrendingUp, TrendingDown, Eye, EyeOff, Check, Folder } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDiagrams } from "@/hooks/useDiagrams";
@@ -513,10 +513,16 @@ const Dashboard = () => {
                 <h2 className="text-2xl font-bold mb-2">Notes</h2>
                 <p className="text-muted-foreground">Keep track of your thoughts and ideas</p>
               </div>
-              <Button onClick={handleNewNote} size="lg">
-                <Plus className="w-5 h-5 mr-2" />
-                New Note
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="lg">
+                  <Folder className="w-5 h-5 mr-2" />
+                  Completed
+                </Button>
+                <Button onClick={handleNewNote} size="lg">
+                  <Plus className="w-5 h-5 mr-2" />
+                  New Note
+                </Button>
+              </div>
             </div>
 
             {/* Notes Grid */}
