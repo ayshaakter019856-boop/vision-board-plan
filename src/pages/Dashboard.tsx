@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy, DollarSign, TrendingUp, TrendingDown, Eye, EyeOff, Check, Folder, Clock, AlertTriangle } from "lucide-react";
+import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy, DollarSign, TrendingUp, TrendingDown, Eye, EyeOff, Check, Folder, Clock, AlertTriangle, Download } from "lucide-react";
+import Papa from 'papaparse';
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDiagrams } from "@/hooks/useDiagrams";
@@ -333,6 +334,48 @@ const Dashboard = () => {
       toast({
         title: "Error",
         description: "Failed to move account to active folder",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Function to export all accounts as CSV
+  const exportAllAccounts = () => {
+    try {
+      const csvData = accounts.map(account => ({
+        'Product Name': account.product_name,
+        'Email': account.email,
+        'Password': account.password,
+        'Customer Name': account.customer_name || '',
+        'Category': account.category,
+        'Order Date': account.order_date || '',
+        'Note': account.note || '',
+        'Status': account.status,
+        'Created At': new Date(account.created_at).toLocaleDateString(),
+        'Updated At': new Date(account.updated_at).toLocaleDateString()
+      }));
+
+      const csv = Papa.unparse(csvData);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `accounts_export_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      toast({
+        title: "Success",
+        description: `Exported ${accounts.length} accounts to CSV`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to export accounts",
         variant: "destructive",
       });
     }
@@ -733,6 +776,15 @@ const Dashboard = () => {
               </div>
               <div className="flex gap-3">
                 <CSVUpload onUpload={bulkCreateAccounts} />
+                <Button 
+                  onClick={exportAllAccounts} 
+                  variant="outline" 
+                  size="lg"
+                  disabled={accounts.length === 0}
+                >
+                  <Download className="w-5 h-5 mr-2" />
+                  Export All
+                </Button>
                 <Button onClick={handleNewAccount} size="lg">
                   <Plus className="w-5 h-5 mr-2" />
                   New Account
