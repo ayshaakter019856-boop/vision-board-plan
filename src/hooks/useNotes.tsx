@@ -7,7 +7,7 @@ export interface Note {
   id: string;
   title: string;
   content?: string | null;
-  completed?: boolean;
+  completed: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -17,15 +17,20 @@ export const useNotes = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  const fetchNotes = async () => {
+  const fetchNotes = async (includeCompleted = false) => {
     if (!user) return;
     
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('notes')
-        .select('*')
-        .order('updated_at', { ascending: false });
+        .select('*');
+      
+      if (!includeCompleted) {
+        query = query.eq('completed', false);
+      }
+      
+      const { data, error } = await query.order('updated_at', { ascending: false });
 
       if (error) throw error;
       setNotes((data || []) as Note[]);
@@ -90,17 +95,18 @@ export const useNotes = () => {
     if (!user) return;
 
     try {
-      // For now, we'll just delete the note when completed
-      // In the future, this can be updated to mark as completed when the DB schema supports it
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('notes')
-        .delete()
-        .eq('id', id);
+        .update({ completed: true })
+        .eq('id', id)
+        .select()
+        .single();
 
       if (error) throw error;
       
       setNotes(prev => prev.filter(n => n.id !== id));
       toast.success('Note completed!');
+      return data;
     } catch (error) {
       console.error('Error completing note:', error);
       toast.error('Failed to complete note');
@@ -137,5 +143,6 @@ export const useNotes = () => {
     completeNote,
     deleteNote,
     refetch: fetchNotes,
+    fetchNotes,
   };
 };

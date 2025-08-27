@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { diagrams, loading, deleteDiagram } = useDiagrams();
-  const { notes, loading: notesLoading, saveNote, completeNote, deleteNote } = useNotes();
+  const { notes, loading: notesLoading, saveNote, completeNote, deleteNote, fetchNotes } = useNotes();
   const { accounts, loading: accountsLoading, createAccount, updateAccount, deleteAccount } = useAccounts();
   const { costs, loading: costsLoading, saveCost, deleteCost } = useCosts();
   const { profile } = useProfile();
@@ -34,7 +34,6 @@ const Dashboard = () => {
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
-  const [completedNotes, setCompletedNotes] = useState<any[]>([]);
   
   // Accounts state
   const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
@@ -121,9 +120,6 @@ const Dashboard = () => {
   };
 
   const handleCompleteNote = (note: any) => {
-    // Move note to completed folder
-    setCompletedNotes(prev => [note, ...prev]);
-    // Remove from pending notes (this will be handled by the completeNote function)
     completeNote(note.id);
   };
 
@@ -523,7 +519,11 @@ const Dashboard = () => {
                 <p className="text-muted-foreground">Keep track of your thoughts and ideas</p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="lg" onClick={() => setShowCompleted(!showCompleted)}>
+                <Button variant="outline" size="lg" onClick={() => {
+                  const newShowCompleted = !showCompleted;
+                  setShowCompleted(newShowCompleted);
+                  fetchNotes(newShowCompleted);
+                }}>
                   <Folder className="w-5 h-5 mr-2" />
                   {showCompleted ? 'Pending' : 'Completed'}
                 </Button>
@@ -545,7 +545,7 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {!notesLoading && !showCompleted && notes.map((note) => (
+              {!notesLoading && notes.filter(note => showCompleted ? note.completed : !note.completed).map((note) => (
                 <Card key={note.id} className="p-6 hover:shadow-medium transition-all group">
                   <div className="space-y-4">
                     <div>
@@ -559,80 +559,68 @@ const Dashboard = () => {
                     </div>
                     
                     <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditNote(note)}
-                        className="flex-1"
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCompleteNote(note)}
-                        className="text-green-600 hover:text-green-700"
-                        title="Mark as completed"
-                      >
-                        <Check className="w-4 h-4" />
-                      </Button>
+                      {!note.completed ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditNote(note)}
+                            className="flex-1"
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCompleteNote(note)}
+                            className="text-green-600 hover:text-green-700"
+                            title="Mark as completed"
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <div className="flex items-center text-green-600">
+                          <Check className="w-4 h-4 mr-2" />
+                          Completed
+                        </div>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => deleteNote(note.id)}
-                        className="text-destructive hover:text-destructive"
+                        className="text-red-600 hover:text-red-700"
+                        title="Delete note"
                       >
-                        Delete
+                        <X className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
                 </Card>
               ))}
 
-              {/* Completed Notes */}
-              {!notesLoading && showCompleted && completedNotes.map((note) => (
-                <Card key={note.id} className="p-6 hover:shadow-medium transition-all group border-green-200">
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-lg">{note.title}</h3>
-                        <Check className="w-5 h-5 text-green-600" />
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-3">
-                        {note.content || 'No content'}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Completed: {formatDate(note.updated_at)}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              ))}
 
-              {!notesLoading && !showCompleted && notes.length === 0 && (
+              {!notesLoading && notes.filter(note => showCompleted ? note.completed : !note.completed).length === 0 && (
                 <div className="col-span-full text-center py-12">
                   <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center mx-auto mb-4">
                     <StickyNote className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <h3 className="font-semibold text-lg mb-2">No notes yet</h3>
-                  <p className="text-muted-foreground mb-4">Create your first note to get started</p>
-                  <Button onClick={handleNewNote}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Note
-                  </Button>
+                  <h3 className="font-semibold text-lg mb-2">
+                    {showCompleted ? 'No completed notes' : 'No notes yet'}
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    {showCompleted ? 'Completed notes will appear here' : 'Create your first note to get started'}
+                  </p>
+                  {!showCompleted && (
+                    <Button onClick={handleNewNote}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Note
+                    </Button>
+                  )}
                 </div>
               )}
 
-              {!notesLoading && showCompleted && completedNotes.length === 0 && (
-                <div className="col-span-full text-center py-12">
-                  <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <Folder className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="font-semibold text-lg mb-2">No completed notes</h3>
-                  <p className="text-muted-foreground">Completed notes will appear here</p>
-                </div>
-              )}
             </div>
 
             {/* Note Dialog */}

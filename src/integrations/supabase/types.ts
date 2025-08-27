@@ -127,6 +127,7 @@ export type Database = {
       }
       notes: {
         Row: {
+          completed: boolean
           content: string | null
           created_at: string
           id: string
@@ -135,6 +136,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          completed?: boolean
           content?: string | null
           created_at?: string
           id?: string
@@ -143,6 +145,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          completed?: boolean
           content?: string | null
           created_at?: string
           id?: string
