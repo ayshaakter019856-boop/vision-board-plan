@@ -13,6 +13,7 @@ export interface Account {
   customer_name?: string;
   order_date?: string;
   category: string;
+  status?: string;
   created_at: string;
   updated_at: string;
 }

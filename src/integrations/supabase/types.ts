@@ -25,6 +25,7 @@ export type Database = {
           order_date: string | null
           password: string
           product_name: string
+          status: string
           updated_at: string
           user_id: string
         }
@@ -38,6 +39,7 @@ export type Database = {
           order_date?: string | null
           password: string
           product_name: string
+          status?: string
           updated_at?: string
           user_id: string
         }
@@ -51,6 +53,7 @@ export type Database = {
           order_date?: string | null
           password?: string
           product_name?: string
+          status?: string
           updated_at?: string
           user_id?: string
         }

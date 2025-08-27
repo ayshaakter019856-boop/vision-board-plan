@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy, DollarSign, TrendingUp, TrendingDown, Eye, EyeOff, Check, Folder } from "lucide-react";
+import { Plus, Search, FolderOpen, Calendar, X, User, Edit, StickyNote, Workflow, FileText, Shield, Copy, DollarSign, TrendingUp, TrendingDown, Eye, EyeOff, Check, Folder, Clock, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDiagrams } from "@/hooks/useDiagrams";
@@ -18,9 +18,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
   const { diagrams, loading, deleteDiagram } = useDiagrams();
   const { notes, loading: notesLoading, saveNote, completeNote, deleteNote, fetchNotes } = useNotes();
   const { accounts, loading: accountsLoading, createAccount, updateAccount, deleteAccount, bulkCreateAccounts } = useAccounts();
@@ -51,6 +53,7 @@ const Dashboard = () => {
   });
   const [showPassword, setShowPassword] = useState<{[key: string]: boolean}>({});
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedFolder, setSelectedFolder] = useState('active'); // active, expired, problem
   const [accountToDelete, setAccountToDelete] = useState<{id: string, name: string} | null>(null);
   
   // Daily costing states
@@ -277,10 +280,46 @@ const Dashboard = () => {
   // Get unique categories
   const categories = Array.from(new Set(accounts.map(account => account.category))).filter(Boolean);
   
-  // Filter accounts by category
-  const filteredAccounts = selectedCategory === 'all' 
-    ? accounts 
-    : accounts.filter(account => account.category === selectedCategory);
+  // Filter accounts by category and folder status
+  const filteredAccounts = accounts.filter(account => {
+    const matchesCategory = selectedCategory === 'all' || account.category === selectedCategory;
+    const matchesFolder = account.status === selectedFolder || !account.status; // handle legacy accounts without status
+    return matchesCategory && matchesFolder;
+  });
+
+  // Function to move account to expired folder
+  const moveToExpired = async (accountId: string) => {
+    try {
+      await updateAccount(accountId, { status: 'expired' });
+      toast({
+        title: "Success",
+        description: "Account moved to Expired folder",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to move account to expired folder",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Function to move account to problem folder
+  const moveToProblem = async (accountId: string) => {
+    try {
+      await updateAccount(accountId, { status: 'problem' });
+      toast({
+        title: "Success",
+        description: "Account moved to Problem folder",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to move account to problem folder",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -684,6 +723,40 @@ const Dashboard = () => {
               </div>
             </div>
 
+            {/* Folder Navigation */}
+            <div className="flex gap-2 items-center mb-4">
+              <label className="text-sm font-medium">Folders:</label>
+              <div className="flex gap-2">
+                <Button
+                  variant={selectedFolder === 'active' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedFolder('active')}
+                  className="flex items-center gap-2"
+                >
+                  <Folder className="w-4 h-4" />
+                  Active ({accounts.filter(a => (a.status || 'active') === 'active').length})
+                </Button>
+                <Button
+                  variant={selectedFolder === 'expired' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedFolder('expired')}
+                  className="flex items-center gap-2"
+                >
+                  <Clock className="w-4 h-4" />
+                  Expired ({accounts.filter(a => a.status === 'expired').length})
+                </Button>
+                <Button
+                  variant={selectedFolder === 'problem' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedFolder('problem')}
+                  className="flex items-center gap-2"
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                  Problem ({accounts.filter(a => a.status === 'problem').length})
+                </Button>
+              </div>
+            </div>
+
             {/* Category Filter */}
             <div className="flex gap-4 items-center">
               <label className="text-sm font-medium">Filter by category:</label>
@@ -835,6 +908,28 @@ const Dashboard = () => {
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>
+                              {selectedFolder === 'active' && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => moveToExpired(account.id)}
+                                    className="text-orange-600 hover:text-orange-700"
+                                    title="Move to Expired folder"
+                                  >
+                                    <Clock className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => moveToProblem(account.id)}
+                                    className="text-red-600 hover:text-red-700"
+                                    title="Move to Problem folder"
+                                  >
+                                    <AlertTriangle className="w-4 h-4" />
+                                  </Button>
+                                </>
+                              )}
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button
