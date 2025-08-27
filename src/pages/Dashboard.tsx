@@ -734,18 +734,19 @@ const Dashboard = () => {
                     </Button>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Product/Service</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Password</TableHead>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Order Date</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Product/Service</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Password</TableHead>
+                          <TableHead>Customer</TableHead>
+                          <TableHead>Expired Date</TableHead>
+                          <TableHead>Remain Days</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
                     <TableBody>
                       {filteredAccounts.map((account) => (
                         <TableRow key={account.id}>
@@ -791,6 +792,28 @@ const Dashboard = () => {
                                   {new Date(account.order_date).toLocaleDateString()}
                                 </span>
                               </div>
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {account.order_date ? (
+                              (() => {
+                                const expiredDate = new Date(account.order_date);
+                                const currentDate = new Date();
+                                const diffTime = expiredDate.getTime() - currentDate.getTime();
+                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                
+                                return (
+                                  <span className={`text-sm font-medium ${
+                                    diffDays < 0 ? 'text-red-600' : 
+                                    diffDays <= 7 ? 'text-yellow-600' : 
+                                    'text-green-600'
+                                  }`}>
+                                    {diffDays < 0 ? `Expired ${Math.abs(diffDays)} days ago` : 
+                                     diffDays === 0 ? 'Expires today' :
+                                     `${diffDays} days remaining`}
+                                  </span>
+                                );
+                              })()
                             ) : '-'}
                           </TableCell>
                           <TableCell>
@@ -881,7 +904,7 @@ const Dashboard = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Order Date</label>
+                    <label className="text-sm font-medium">Expired Date</label>
                     <Input
                       type="date"
                       value={accountForm.order_date}
