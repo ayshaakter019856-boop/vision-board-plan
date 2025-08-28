@@ -481,14 +481,14 @@ const Dashboard = () => {
   const exportAllNetflixAccounts = () => {
     try {
       const csvData = netflixAccounts.map(account => ({
-        'Product Name': account.product_name,
+        'Customer Name': account.product_name,
+        'Category': account.category,
         'Email': account.email,
         'Password': account.password,
         'Profile Name': account.profile_name || '',
         'Profile Pin': account.profile_pin || '',
-        'Category': account.category,
-        'Order Date': account.order_date || '',
         'Note': account.note || '',
+        'Order Date': account.order_date || '',
         'Status': account.status,
         'Created At': new Date(account.created_at).toLocaleDateString(),
         'Updated At': new Date(account.updated_at).toLocaleDateString()
@@ -1590,7 +1590,7 @@ const Dashboard = () => {
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium">Product/Service Name *</label>
+                    <label className="text-sm font-medium">Customer Name *</label>
                     <Input
                       value={netflixForm.product_name}
                       onChange={(e) => setNetflixForm(prev => ({ ...prev, product_name: e.target.value }))}
