@@ -128,7 +128,7 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ onUpload, templateType = '
                 note: row.note?.trim() || '',
                 profile_name: row.profile_name?.trim() || '',
                 profile_pin: row.profile_pin?.trim() || '',
-                order_date: ''
+                order_date: null // Set to null instead of empty string for date field
               };
             }
             return {
@@ -138,7 +138,7 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ onUpload, templateType = '
               category: row.category?.trim() || '',
               note: row.note?.trim() || '',
               customer_name: row.customer_name?.trim() || '',
-              order_date: row.expired_date?.trim() || ''
+              order_date: row.expired_date?.trim() || null // Set to null if empty
             };
           }).filter(row => {
             if (templateType === 'netflix') {
