@@ -128,6 +128,54 @@ export type Database = {
         }
         Relationships: []
       }
+      netflix_accounts: {
+        Row: {
+          category: string
+          created_at: string
+          email: string
+          id: string
+          note: string | null
+          order_date: string | null
+          password: string
+          product_name: string
+          profile_name: string | null
+          profile_pin: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          email: string
+          id?: string
+          note?: string | null
+          order_date?: string | null
+          password: string
+          product_name: string
+          profile_name?: string | null
+          profile_pin?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          email?: string
+          id?: string
+          note?: string | null
+          order_date?: string | null
+          password?: string
+          product_name?: string
+          profile_name?: string | null
+          profile_pin?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
           completed: boolean

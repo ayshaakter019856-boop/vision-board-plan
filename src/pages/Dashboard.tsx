@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDiagrams } from "@/hooks/useDiagrams";
 import { useNotes } from "@/hooks/useNotes";
 import { useAccounts } from "@/hooks/useAccounts";
+import { useNetflixAccounts } from "@/hooks/useNetflixAccounts";
 import { CSVUpload } from "@/components/CSVUpload";
 import { useCosts } from "@/hooks/useCosts";
 import { useProfile } from "@/hooks/useProfile";
@@ -27,6 +28,7 @@ const Dashboard = () => {
   const { diagrams, loading, deleteDiagram } = useDiagrams();
   const { notes, loading: notesLoading, saveNote, completeNote, deleteNote, fetchNotes } = useNotes();
   const { accounts, loading: accountsLoading, createAccount, updateAccount, deleteAccount, bulkCreateAccounts } = useAccounts();
+  const { netflixAccounts, loading: netflixLoading, createNetflixAccount, updateNetflixAccount, deleteNetflixAccount, bulkCreateNetflixAccounts } = useNetflixAccounts();
   const { costs, loading: costsLoading, saveCost, deleteCost } = useCosts();
   const { profile } = useProfile();
   const { isAdmin } = useRoles();
@@ -69,8 +71,24 @@ const Dashboard = () => {
     is_earning: false
   });
   
+  // Netflix accounts state
+  const [isNetflixDialogOpen, setIsNetflixDialogOpen] = useState(false);
+  const [editingNetflixAccount, setEditingNetflixAccount] = useState<string | null>(null);
+  const [netflixForm, setNetflixForm] = useState({
+    product_name: '',
+    email: '',
+    password: '',
+    profile_name: '',
+    profile_pin: '',
+    note: '',
+    category: ''
+  });
+  const [showNetflixPassword, setShowNetflixPassword] = useState<{[key: string]: boolean}>({});
+  const [selectedNetflixCategory, setSelectedNetflixCategory] = useState('all');
+  const [selectedNetflixFolder, setSelectedNetflixFolder] = useState('active');
+
   // Section visibility state
-  const [activeSection, setActiveSection] = useState<'diagrams' | 'notes' | 'accounts' | 'costs' | null>(null);
+  const [activeSection, setActiveSection] = useState<'diagrams' | 'notes' | 'accounts' | 'netflix' | 'costs' | null>(null);
 
   const filteredDiagrams = diagrams.filter(diagram =>
     diagram.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -280,11 +298,19 @@ const Dashboard = () => {
 
   // Get unique categories
   const categories = Array.from(new Set(accounts.map(account => account.category))).filter(Boolean);
+  const netflixCategories = Array.from(new Set(netflixAccounts.map(account => account.category))).filter(Boolean);
   
   // Filter accounts by category and folder status
   const filteredAccounts = accounts.filter(account => {
     const matchesCategory = selectedCategory === 'all' || account.category === selectedCategory;
     const matchesFolder = account.status === selectedFolder || !account.status; // handle legacy accounts without status
+    return matchesCategory && matchesFolder;
+  });
+
+  // Filter Netflix accounts by category and folder status
+  const filteredNetflixAccounts = netflixAccounts.filter(account => {
+    const matchesCategory = selectedNetflixCategory === 'all' || account.category === selectedNetflixCategory;
+    const matchesFolder = account.status === selectedNetflixFolder || !account.status;
     return matchesCategory && matchesFolder;
   });
 
@@ -334,6 +360,161 @@ const Dashboard = () => {
       toast({
         title: "Error",
         description: "Failed to move account to active folder",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Netflix account handlers
+  const resetNetflixForm = () => {
+    setNetflixForm({
+      product_name: '',
+      email: '',
+      password: '',
+      profile_name: '',
+      profile_pin: '',
+      note: '',
+      category: ''
+    });
+  };
+
+  const handleNewNetflixAccount = () => {
+    resetNetflixForm();
+    setEditingNetflixAccount(null);
+    setIsNetflixDialogOpen(true);
+  };
+
+  const handleEditNetflixAccount = (account: any) => {
+    setNetflixForm({
+      product_name: account.product_name,
+      email: account.email,
+      password: account.password,
+      profile_name: account.profile_name || '',
+      profile_pin: account.profile_pin || '',
+      note: account.note || '',
+      category: account.category
+    });
+    setEditingNetflixAccount(account.id);
+    setIsNetflixDialogOpen(true);
+  };
+
+  const handleSaveNetflixAccount = async () => {
+    if (!netflixForm.product_name.trim() || !netflixForm.category.trim()) return;
+    
+    if (editingNetflixAccount) {
+      await updateNetflixAccount(editingNetflixAccount, netflixForm);
+    } else {
+      await createNetflixAccount({ ...netflixForm, status: 'active' });
+    }
+    
+    resetNetflixForm();
+    setEditingNetflixAccount(null);
+    setIsNetflixDialogOpen(false);
+  };
+
+  const toggleNetflixPasswordVisibility = (accountId: string) => {
+    setShowNetflixPassword(prev => ({
+      ...prev,
+      [accountId]: !prev[accountId]
+    }));
+  };
+
+  const copyNetflixAccountDetails = async (account: any) => {
+    const details = [
+      account.email ? `Email: ${account.email}` : '',
+      account.profile_name ? `Profile Name: ${account.profile_name}` : '',
+      account.profile_pin ? `Pin: ${account.profile_pin}` : '',
+      account.note ? `Note: ${account.note}` : ''
+    ].filter(Boolean).join('\n');
+
+    try {
+      await navigator.clipboard.writeText(details);
+      toast({
+        title: "Success",
+        description: "Account details copied to clipboard",
+      });
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+    }
+  };
+
+  // Function to move Netflix account to expired folder
+  const moveNetflixToExpired = async (accountId: string) => {
+    try {
+      await updateNetflixAccount(accountId, { status: 'expired' });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to move Netflix account to expired folder",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Function to move Netflix account to problem folder
+  const moveNetflixToProblem = async (accountId: string) => {
+    try {
+      await updateNetflixAccount(accountId, { status: 'problem' });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to move Netflix account to problem folder",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Function to move Netflix account back to active folder
+  const moveNetflixToActive = async (accountId: string) => {
+    try {
+      await updateNetflixAccount(accountId, { status: 'active' });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to move Netflix account to active folder",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Function to export all Netflix accounts as CSV
+  const exportAllNetflixAccounts = () => {
+    try {
+      const csvData = netflixAccounts.map(account => ({
+        'Product Name': account.product_name,
+        'Email': account.email,
+        'Password': account.password,
+        'Profile Name': account.profile_name || '',
+        'Profile Pin': account.profile_pin || '',
+        'Category': account.category,
+        'Order Date': account.order_date || '',
+        'Note': account.note || '',
+        'Status': account.status,
+        'Created At': new Date(account.created_at).toLocaleDateString(),
+        'Updated At': new Date(account.updated_at).toLocaleDateString()
+      }));
+
+      const csv = Papa.unparse(csvData);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `netflix_accounts_export_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      toast({
+        title: "Success",
+        description: `Exported ${netflixAccounts.length} Netflix accounts to CSV`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to export Netflix accounts",
         variant: "destructive",
       });
     }
@@ -418,7 +599,7 @@ const Dashboard = () => {
         </div>
 
         {/* Section Navigation */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
+        <div className="grid md:grid-cols-5 gap-6 mb-8">
           <Card 
             className={`p-6 cursor-pointer transition-all hover:shadow-medium group ${
               activeSection === 'diagrams' ? 'ring-2 ring-primary bg-primary/5' : ''
@@ -466,6 +647,23 @@ const Dashboard = () => {
               <div>
                 <h3 className="font-semibold text-lg">Digital Accounts</h3>
                 <p className="text-sm text-muted-foreground">{accounts.length} accounts</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card 
+            className={`p-6 cursor-pointer transition-all hover:shadow-medium group ${
+              activeSection === 'netflix' ? 'ring-2 ring-primary bg-primary/5' : ''
+            }`}
+            onClick={() => setActiveSection(activeSection === 'netflix' ? null : 'netflix')}
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">Netflix</h3>
+                <p className="text-sm text-muted-foreground">{netflixAccounts.length} accounts</p>
               </div>
             </div>
           </Card>
@@ -1124,6 +1322,339 @@ const Dashboard = () => {
                   </Button>
                   <Button onClick={handleSaveAccount}>
                     {editingAccount ? 'Update' : 'Create'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+
+        {/* Netflix Section */}
+        {activeSection === 'netflix' && (
+          <div className="space-y-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">Netflix Accounts</h2>
+                <p className="text-muted-foreground">Manage your Netflix service accounts and credentials</p>
+              </div>
+              <div className="flex gap-3">
+                <CSVUpload onUpload={bulkCreateNetflixAccounts} />
+                <Button 
+                  onClick={exportAllNetflixAccounts} 
+                  variant="outline" 
+                  size="lg"
+                  disabled={netflixAccounts.length === 0}
+                >
+                  <Download className="w-5 h-5 mr-2" />
+                  Export All
+                </Button>
+                <Button onClick={handleNewNetflixAccount} size="lg">
+                  <Plus className="w-5 h-5 mr-2" />
+                  New Account
+                </Button>
+              </div>
+            </div>
+
+            {/* Folder Navigation */}
+            <div className="flex gap-2 items-center mb-4">
+              <label className="text-sm font-medium">Folders:</label>
+              <div className="flex gap-2">
+                <Button
+                  variant={selectedNetflixFolder === 'active' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedNetflixFolder('active')}
+                  className="flex items-center gap-2"
+                >
+                  <Folder className="w-4 h-4" />
+                  Active ({netflixAccounts.filter(a => (a.status || 'active') === 'active').length})
+                </Button>
+                <Button
+                  variant={selectedNetflixFolder === 'expired' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedNetflixFolder('expired')}
+                  className="flex items-center gap-2"
+                >
+                  <Clock className="w-4 h-4" />
+                  Expired ({netflixAccounts.filter(a => a.status === 'expired').length})
+                </Button>
+                <Button
+                  variant={selectedNetflixFolder === 'problem' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedNetflixFolder('problem')}
+                  className="flex items-center gap-2"
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                  Problem ({netflixAccounts.filter(a => a.status === 'problem').length})
+                </Button>
+              </div>
+            </div>
+
+            {/* Category Filter */}
+            <div className="flex gap-4 items-center">
+              <label className="text-sm font-medium">Filter by category:</label>
+              <Select value={selectedNetflixCategory} onValueChange={setSelectedNetflixCategory}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {netflixCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Netflix Accounts Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Netflix Account List</CardTitle>
+                <CardDescription>
+                  Your saved Netflix accounts and login credentials
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {netflixLoading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="text-center space-y-4">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                      <p className="text-muted-foreground">Loading Netflix accounts...</p>
+                    </div>
+                  </div>
+                ) : filteredNetflixAccounts.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center mx-auto mb-4">
+                      <Shield className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-2">No Netflix accounts found</h3>
+                    <p className="text-muted-foreground mb-4">
+                      {selectedNetflixCategory === 'all' 
+                        ? 'Create your first Netflix account to get started'
+                        : `No Netflix accounts in the "${selectedNetflixCategory}" category`
+                      }
+                    </p>
+                    <Button onClick={handleNewNetflixAccount}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Netflix Account
+                    </Button>
+                  </div>
+                ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Product/Service</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Password</TableHead>
+                          <TableHead>Profile Name</TableHead>
+                          <TableHead>Profile Pin</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                    <TableBody>
+                      {filteredNetflixAccounts.map((account) => (
+                        <TableRow key={account.id}>
+                          <TableCell className="font-medium">
+                            {account.product_name}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{account.category}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-mono text-sm">{account.email || '-'}</span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-mono text-sm">
+                                {account.password ? (
+                                  showNetflixPassword[account.id] 
+                                    ? account.password 
+                                    : '••••••••'
+                                ) : '-'}
+                              </span>
+                              {account.password && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleNetflixPasswordVisibility(account.id)}
+                                >
+                                  {showNetflixPassword[account.id] ? (
+                                    <EyeOff className="w-4 h-4" />
+                                  ) : (
+                                    <Eye className="w-4 h-4" />
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>{account.profile_name || '-'}</TableCell>
+                          <TableCell>{account.profile_pin || '-'}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyNetflixAccountDetails(account)}
+                                title="Copy account details"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditNetflixAccount(account)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              {selectedNetflixFolder === 'active' && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => moveNetflixToExpired(account.id)}
+                                    className="text-orange-600 hover:text-orange-700"
+                                    title="Move to Expired folder"
+                                  >
+                                    <Clock className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => moveNetflixToProblem(account.id)}
+                                    className="text-red-600 hover:text-red-700"
+                                    title="Move to Problem folder"
+                                  >
+                                    <AlertTriangle className="w-4 h-4" />
+                                  </Button>
+                                </>
+                              )}
+                              {(selectedNetflixFolder === 'expired' || selectedNetflixFolder === 'problem') && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => moveNetflixToActive(account.id)}
+                                  className="text-green-600 hover:text-green-700"
+                                  title="Mark as solved - Move back to Active"
+                                >
+                                  <Check className="w-4 h-4" />
+                                </Button>
+                              )}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Netflix Account</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete the Netflix account for "{account.product_name}"? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>No, Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => deleteNetflixAccount(account.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Yes, Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Netflix Account Dialog */}
+            <Dialog open={isNetflixDialogOpen} onOpenChange={setIsNetflixDialogOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>{editingNetflixAccount ? 'Edit Netflix Account' : 'Add New Netflix Account'}</DialogTitle>
+                  <DialogDescription>
+                    {editingNetflixAccount ? 'Update Netflix account information' : 'Add a new Netflix service account'}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Product/Service Name *</label>
+                    <Input
+                      value={netflixForm.product_name}
+                      onChange={(e) => setNetflixForm(prev => ({ ...prev, product_name: e.target.value }))}
+                      placeholder="e.g., Netflix Premium, Netflix Basic..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Category *</label>
+                    <Input
+                      value={netflixForm.category}
+                      onChange={(e) => setNetflixForm(prev => ({ ...prev, category: e.target.value }))}
+                      placeholder="e.g., Streaming, Entertainment..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Email</label>
+                    <Input
+                      type="email"
+                      value={netflixForm.email}
+                      onChange={(e) => setNetflixForm(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="account@email.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Password</label>
+                    <Input
+                      type="password"
+                      value={netflixForm.password}
+                      onChange={(e) => setNetflixForm(prev => ({ ...prev, password: e.target.value }))}
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Profile Name</label>
+                    <Input
+                      value={netflixForm.profile_name}
+                      onChange={(e) => setNetflixForm(prev => ({ ...prev, profile_name: e.target.value }))}
+                      placeholder="Profile display name"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Profile Pin</label>
+                    <Input
+                      value={netflixForm.profile_pin}
+                      onChange={(e) => setNetflixForm(prev => ({ ...prev, profile_pin: e.target.value }))}
+                      placeholder="Profile PIN"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Note</label>
+                    <Textarea
+                      value={netflixForm.note}
+                      onChange={(e) => setNetflixForm(prev => ({ ...prev, note: e.target.value }))}
+                      placeholder="Additional notes..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsNetflixDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveNetflixAccount}>
+                    {editingNetflixAccount ? 'Update' : 'Create'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
