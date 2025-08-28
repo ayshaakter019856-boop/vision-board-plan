@@ -1444,7 +1444,7 @@ const Dashboard = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Product/Service</TableHead>
+                          <TableHead>Customer Name</TableHead>
                           <TableHead>Category</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Password</TableHead>
