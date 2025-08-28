@@ -520,6 +520,36 @@ const Dashboard = () => {
     }
   };
 
+  // Function to download Netflix CSV template
+  const downloadNetflixTemplate = () => {
+    const templateData = [{
+      'Customer Name': '',
+      'Category': '',
+      'Email': '',
+      'Password': '',
+      'Profile Name': '',
+      'Profile Pin': ''
+    }];
+
+    const csv = Papa.unparse(templateData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'netflix_accounts_template.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    toast({
+      title: "Success",
+      description: "Downloaded Netflix CSV template",
+    });
+  };
+
   // Function to export all accounts as CSV
   const exportAllAccounts = () => {
     try {
@@ -1339,6 +1369,14 @@ const Dashboard = () => {
               </div>
               <div className="flex gap-3">
                 <CSVUpload onUpload={bulkCreateNetflixAccounts} />
+                <Button 
+                  onClick={downloadNetflixTemplate} 
+                  variant="outline" 
+                  size="lg"
+                >
+                  <Download className="w-5 h-5 mr-2" />
+                  Download Template
+                </Button>
                 <Button 
                   onClick={exportAllNetflixAccounts} 
                   variant="outline" 
