@@ -9,19 +9,22 @@ import { Account } from '@/hooks/useAccounts';
 
 interface CSVUploadProps {
   onUpload: (accounts: Omit<Account, 'id' | 'created_at' | 'updated_at'>[]) => Promise<any>;
+  templateType?: 'accounts' | 'netflix';
 }
 
 interface CSVAccount {
-  product_name: string;
+  product_name?: string;
+  customer_name?: string;
   email: string;
-  password: string;
+  password?: string;
   category: string;
   note?: string;
-  customer_name?: string;
   expired_date?: string;
+  profile_name?: string;
+  profile_pin?: string;
 }
 
-export const CSVUpload: React.FC<CSVUploadProps> = ({ onUpload }) => {
+export const CSVUpload: React.FC<CSVUploadProps> = ({ onUpload, templateType = 'accounts' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -29,8 +32,23 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ onUpload }) => {
   const [success, setSuccess] = useState<string | null>(null);
   const [previewData, setPreviewData] = useState<CSVAccount[]>([]);
 
-  const expectedColumns = ['product_name', 'email', 'password', 'category'];
-  const optionalColumns = ['note', 'customer_name', 'expired_date'];
+  // Configure columns based on template type
+  const getColumnsConfig = () => {
+    if (templateType === 'netflix') {
+      return {
+        expectedColumns: ['email', 'category'],
+        optionalColumns: ['customer_name', 'password', 'profile_name', 'profile_pin'],
+        requiredFields: ['email', 'category']
+      };
+    }
+    return {
+      expectedColumns: ['product_name', 'email', 'password', 'category'],
+      optionalColumns: ['note', 'customer_name', 'expired_date'],
+      requiredFields: ['product_name', 'email', 'password', 'category']
+    };
+  };
+
+  const { expectedColumns, optionalColumns, requiredFields } = getColumnsConfig();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -62,13 +80,17 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ onUpload }) => {
           return;
         }
 
-        // Validate data
+        // Validate data based on template type
         const invalidRows = data.filter((row, index) => {
+          if (templateType === 'netflix') {
+            return !row.email?.trim() || !row.category?.trim();
+          }
           return !row.product_name?.trim() || !row.email?.trim() || !row.password?.trim() || !row.category?.trim();
         });
 
         if (invalidRows.length > 0) {
-          setError(`${invalidRows.length} rows have missing required data (product_name, email, password, category)`);
+          const requiredFieldsText = templateType === 'netflix' ? 'email, category' : 'product_name, email, password, category';
+          setError(`${invalidRows.length} rows have missing required data (${requiredFieldsText})`);
           return;
         }
 
@@ -95,16 +117,35 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ onUpload }) => {
         complete: async (results) => {
           const data = results.data as CSVAccount[];
           
-          // Clean and validate data
-          const cleanedData = data.map(row => ({
-            product_name: row.product_name?.trim() || '',
-            email: row.email?.trim() || '',
-            password: row.password?.trim() || '',
-            category: row.category?.trim() || '',
-            note: row.note?.trim() || '',
-            customer_name: row.customer_name?.trim() || '',
-            order_date: row.expired_date?.trim() || ''
-          })).filter(row => row.product_name && row.email && row.password && row.category);
+          // Clean and validate data based on template type
+          const cleanedData = data.map(row => {
+            if (templateType === 'netflix') {
+              return {
+                product_name: row.customer_name?.trim() || '',
+                email: row.email?.trim() || '',
+                password: row.password?.trim() || '',
+                category: row.category?.trim() || '',
+                note: row.note?.trim() || '',
+                profile_name: row.profile_name?.trim() || '',
+                profile_pin: row.profile_pin?.trim() || '',
+                order_date: ''
+              };
+            }
+            return {
+              product_name: row.product_name?.trim() || '',
+              email: row.email?.trim() || '',
+              password: row.password?.trim() || '',
+              category: row.category?.trim() || '',
+              note: row.note?.trim() || '',
+              customer_name: row.customer_name?.trim() || '',
+              order_date: row.expired_date?.trim() || ''
+            };
+          }).filter(row => {
+            if (templateType === 'netflix') {
+              return row.email && row.category;
+            }
+            return row.product_name && row.email && row.password && row.category;
+          });
 
           try {
             await onUpload(cleanedData);
@@ -130,18 +171,30 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ onUpload }) => {
   };
 
   const downloadTemplate = () => {
-    const template = [
-      ['product_name', 'email', 'password', 'category', 'note', 'customer_name', 'expired_date'],
-      ['Netflix', 'user@example.com', 'password123', 'Streaming', 'Premium account', 'John Doe', '2024-12-31'],
-      ['Spotify', 'user2@example.com', 'mypassword', 'Music', 'Family plan', 'Jane Smith', '2024-11-15']
-    ];
+    let template, filename;
+    
+    if (templateType === 'netflix') {
+      template = [
+        ['customer_name', 'category', 'email', 'password', 'profile_name', 'profile_pin'],
+        ['', 'Streaming', 'user@example.com', '', 'User1', '1234'],
+        ['', 'Entertainment', 'user2@example.com', '', 'User2', '5678']
+      ];
+      filename = 'netflix_accounts_template.csv';
+    } else {
+      template = [
+        ['product_name', 'email', 'password', 'category', 'note', 'customer_name', 'expired_date'],
+        ['Netflix', 'user@example.com', 'password123', 'Streaming', 'Premium account', 'John Doe', '2024-12-31'],
+        ['Spotify', 'user2@example.com', 'mypassword', 'Music', 'Family plan', 'Jane Smith', '2024-11-15']
+      ];
+      filename = 'accounts_template.csv';
+    }
     
     const csv = Papa.unparse(template);
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'accounts_template.csv';
+    a.download = filename;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -228,19 +281,41 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ onUpload }) => {
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50">
                       <tr>
-                        <th className="px-3 py-2 text-left">Product</th>
-                        <th className="px-3 py-2 text-left">Email</th>
-                        <th className="px-3 py-2 text-left">Category</th>
-                        <th className="px-3 py-2 text-left">Customer</th>
+                        {templateType === 'netflix' ? (
+                          <>
+                            <th className="px-3 py-2 text-left">Customer Name</th>
+                            <th className="px-3 py-2 text-left">Category</th>
+                            <th className="px-3 py-2 text-left">Email</th>
+                            <th className="px-3 py-2 text-left">Profile Name</th>
+                          </>
+                        ) : (
+                          <>
+                            <th className="px-3 py-2 text-left">Product</th>
+                            <th className="px-3 py-2 text-left">Email</th>
+                            <th className="px-3 py-2 text-left">Category</th>
+                            <th className="px-3 py-2 text-left">Customer</th>
+                          </>
+                        )}
                       </tr>
                     </thead>
                     <tbody>
                       {previewData.map((row, index) => (
                         <tr key={index} className="border-t">
-                          <td className="px-3 py-2">{row.product_name}</td>
-                          <td className="px-3 py-2">{row.email}</td>
-                          <td className="px-3 py-2">{row.category}</td>
-                          <td className="px-3 py-2">{row.customer_name || '-'}</td>
+                          {templateType === 'netflix' ? (
+                            <>
+                              <td className="px-3 py-2">{row.customer_name || '-'}</td>
+                              <td className="px-3 py-2">{row.category}</td>
+                              <td className="px-3 py-2">{row.email}</td>
+                              <td className="px-3 py-2">{row.profile_name || '-'}</td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="px-3 py-2">{row.product_name}</td>
+                              <td className="px-3 py-2">{row.email}</td>
+                              <td className="px-3 py-2">{row.category}</td>
+                              <td className="px-3 py-2">{row.customer_name || '-'}</td>
+                            </>
+                          )}
                         </tr>
                       ))}
                     </tbody>
