@@ -37,7 +37,7 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ onUpload, templateType = '
     if (templateType === 'netflix') {
       return {
         expectedColumns: ['email', 'category'],
-        optionalColumns: ['customer_name', 'password', 'profile_name', 'profile_pin'],
+        optionalColumns: ['customer_name', 'password', 'profile_name', 'profile_pin', 'note'],
         requiredFields: ['email', 'category']
       };
     }
@@ -175,9 +175,9 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ onUpload, templateType = '
     
     if (templateType === 'netflix') {
       template = [
-        ['customer_name', 'category', 'email', 'password', 'profile_name', 'profile_pin'],
-        ['', 'Streaming', 'user@example.com', '', 'User1', '1234'],
-        ['', 'Entertainment', 'user2@example.com', '', 'User2', '5678']
+        ['customer_name', 'category', 'email', 'password', 'profile_name', 'profile_pin', 'note'],
+        ['', 'Streaming', 'user@example.com', '', 'User1', '1234', 'Sample note'],
+        ['', 'Entertainment', 'user2@example.com', '', 'User2', '5678', 'Another note']
       ];
       filename = 'netflix_accounts_template.csv';
     } else {
