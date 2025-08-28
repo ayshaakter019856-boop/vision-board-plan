@@ -445,7 +445,7 @@ const Dashboard = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to move Netflix account to expired folder",
+        description: "Failed to move Codebase account to expired folder",
         variant: "destructive",
       });
     }
@@ -458,7 +458,7 @@ const Dashboard = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to move Netflix account to problem folder",
+        description: "Failed to move Codebase account to problem folder",
         variant: "destructive",
       });
     }
@@ -471,7 +471,7 @@ const Dashboard = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to move Netflix account to active folder",
+        description: "Failed to move Codebase account to active folder",
         variant: "destructive",
       });
     }
@@ -509,12 +509,12 @@ const Dashboard = () => {
 
       toast({
         title: "Success",
-        description: `Exported ${netflixAccounts.length} Netflix accounts to CSV`,
+        description: `Exported ${netflixAccounts.length} Codebase accounts to CSV`,
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to export Netflix accounts",
+        description: "Failed to export Codebase accounts",
         variant: "destructive",
       });
     }
@@ -663,7 +663,7 @@ const Dashboard = () => {
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Netflix</h3>
+                <h3 className="font-semibold text-lg">Codebase Account</h3>
                 <p className="text-sm text-muted-foreground">{netflixAccounts.length} accounts</p>
               </div>
             </div>
@@ -1335,8 +1335,8 @@ const Dashboard = () => {
           <div className="space-y-6">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold mb-2">Netflix Accounts</h2>
-                <p className="text-muted-foreground">Manage your Netflix service accounts and credentials</p>
+                <h2 className="text-2xl font-bold mb-2">Codebase Accounts</h2>
+                <p className="text-muted-foreground">Manage your Codebase service accounts and credentials</p>
               </div>
               <div className="flex gap-3">
                 <CSVUpload onUpload={bulkCreateNetflixAccounts} templateType="netflix" />
@@ -1347,11 +1347,11 @@ const Dashboard = () => {
                   disabled={netflixAccounts.length === 0}
                 >
                   <Download className="w-5 h-5 mr-2" />
-                  Export All
+                  Export Codebase CSV
                 </Button>
                 <Button onClick={handleNewNetflixAccount} size="lg">
                   <Plus className="w-5 h-5 mr-2" />
-                  New Account
+                  New Codebase Account
                 </Button>
               </div>
             </div>
@@ -1436,10 +1436,10 @@ const Dashboard = () => {
                         : `No Netflix accounts in the "${selectedNetflixCategory}" category`
                       }
                     </p>
-                    <Button onClick={handleNewNetflixAccount}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Netflix Account
-                    </Button>
+                  <Button onClick={handleNewNetflixAccount}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Codebase Account
+                  </Button>
                   </div>
                 ) : (
                     <Table>
@@ -1554,9 +1554,9 @@ const Dashboard = () => {
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Netflix Account</AlertDialogTitle>
+                                    <AlertDialogTitle>Delete Codebase Account</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Are you sure you want to delete the Netflix account for "{account.product_name}"? This action cannot be undone.
+                                      Are you sure you want to delete the Codebase account for "{account.product_name}"? This action cannot be undone.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
@@ -1584,9 +1584,9 @@ const Dashboard = () => {
             <Dialog open={isNetflixDialogOpen} onOpenChange={setIsNetflixDialogOpen}>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>{editingNetflixAccount ? 'Edit Netflix Account' : 'Add New Netflix Account'}</DialogTitle>
+                  <DialogTitle>{editingNetflixAccount ? 'Edit Codebase Account' : 'Add New Codebase Account'}</DialogTitle>
                   <DialogDescription>
-                    {editingNetflixAccount ? 'Update Netflix account information' : 'Add a new Netflix service account'}
+                    {editingNetflixAccount ? 'Update Codebase account information' : 'Add a new Codebase service account'}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -1595,7 +1595,7 @@ const Dashboard = () => {
                     <Input
                       value={netflixForm.product_name}
                       onChange={(e) => setNetflixForm(prev => ({ ...prev, product_name: e.target.value }))}
-                      placeholder="e.g., Netflix Premium, Netflix Basic..."
+                      placeholder="e.g., Codebase Premium, Codebase Basic..."
                     />
                   </div>
                   <div>
